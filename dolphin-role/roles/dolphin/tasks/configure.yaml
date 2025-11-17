@@ -1,0 +1,67 @@
+---
+- name: Disable enterprise repo if present
+  lineinfile:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    regexp: '^deb '
+    line: '# deb https://enterprise.proxmox.com/debian/pve {{ ansible_lsb.codename }} pve-enterprise'
+  ignore_errors: true
+
+- name: Ensure keyrings dir exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Install Proxmox no-subscription repo key
+  get_url:
+    url: "https://enterprise.proxmox.com/debian/proxmox-release-{{ ansible_lsb.codename }}.gpg"
+    dest: /etc/apt/keyrings/proxmox.gpg
+    mode: "0644"
+
+- name: Configure no-subscription repo
+  copy:
+    dest: /etc/apt/sources.list.d/pve-no-subscription.list
+    mode: "0644"
+    content: |
+      deb [signed-by=/etc/apt/keyrings/proxmox.gpg] https://enterprise.proxmox.com/debian/pve {{ ansible_lsb.codename }} pve-no-subscription
+
+- name: Update APT
+  apt:
+    update_cache: yes
+
+- name: Configure Proxmox datacenter defaults
+  copy:
+    dest: /etc/pve/datacenter.cfg
+    mode: "0644"
+    content: |
+      keyboard: {{ dolphin_datacenter_cfg.keyboard }}
+      console: {{ dolphin_datacenter_cfg.console }}
+
+- name: Ensure labs group exists
+  command: pveum groupadd {{ dolphin_api_group }}
+  register: dolphin_group
+  failed_when: dolphin_group.rc not in [0, 2]
+  changed_when: dolphin_group.rc == 0
+
+- name: Ensure labs@pve user exists
+  command: pveum useradd {{ dolphin_api_user }} -group {{ dolphin_api_group }}
+  register: dolphin_user
+  failed_when: dolphin_user.rc not in [0, 2]
+  changed_when: dolphin_user.rc == 0
+
+- name: Grant PVEAdmin role to labs group
+  command: pveum aclmod / -group {{ dolphin_api_group }} -role PVEAdmin
+  register: dolphin_acl
+  failed_when: dolphin_acl.rc not in [0, 2]
+  changed_when: dolphin_acl.rc == 0
+
+- name: Add storages with pvesm
+  shell: |
+    if ! pvesm status | awk 'NR>1{print $1}' | grep -qx '{{ item.id }}'; then
+      pvesm add {{ item.type }} {{ item.id }} -pool {{ item.pool }} -content {{ item.content }}
+    fi
+  args:
+    executable: /bin/bash
+  loop: "{{ dolphin_storages }}"
+  loop_control:
+    label: "{{ item.id }}"
