@@ -6,4 +6,4 @@
   failed_when: dolphin_pveversion.rc != 0
 
 - name: Run dolphin configuration tasks
-  include_tasks: configure.yaml
+  include_tasks: configure.yml

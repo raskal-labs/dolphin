@@ -1,9 +1,14 @@
 ---
-- name: Disable enterprise repo if present
-  lineinfile:
-    path: /etc/apt/sources.list.d/pve-enterprise.list
-    regexp: '^deb '
-    line: '# deb https://enterprise.proxmox.com/debian/pve {{ ansible_lsb.codename }} pve-enterprise'
+- name: Remove Proxmox enterprise repo files if present
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/pve-enterprise.list
+    - /etc/apt/sources.list.d/pve-enterprise.sources
+    - /etc/apt/sources.list.d/ceph.list
+    - /etc/apt/sources.list.d/ceph-squid.list
+    - /etc/apt/sources.list.d/ceph.sources
   ignore_errors: true
 
 - name: Ensure keyrings dir exists
@@ -12,48 +17,45 @@
     state: directory
     mode: "0755"
 
-- name: Install Proxmox no-subscription repo key
-  get_url:
-    url: "https://enterprise.proxmox.com/debian/proxmox-release-{{ ansible_lsb.codename }}.gpg"
-    dest: /etc/apt/keyrings/proxmox.gpg
-    mode: "0644"
-
-- name: Configure no-subscription repo
+- name: Configure PVE no-subscription repo
   copy:
     dest: /etc/apt/sources.list.d/pve-no-subscription.list
     mode: "0644"
     content: |
-      deb [signed-by=/etc/apt/keyrings/proxmox.gpg] https://enterprise.proxmox.com/debian/pve {{ ansible_lsb.codename }} pve-no-subscription
+      deb [signed-by=/usr/share/keyrings/proxmox-archive-keyring.gpg] http://download.proxmox.com/debian/pve {{ ansible_lsb.codename }} pve-no-subscription
 
 - name: Update APT
   apt:
     update_cache: yes
 
-- name: Configure Proxmox datacenter defaults
+- name: Configure Proxmox datacenter defaults (best effort)
   copy:
     dest: /etc/pve/datacenter.cfg
-    mode: "0644"
+    owner: root
+    group: www-data
+    mode: "0640"
     content: |
       keyboard: {{ dolphin_datacenter_cfg.keyboard }}
       console: {{ dolphin_datacenter_cfg.console }}
+  ignore_errors: true
 
 - name: Ensure labs group exists
   command: pveum groupadd {{ dolphin_api_group }}
   register: dolphin_group
-  failed_when: dolphin_group.rc not in [0, 2]
-  changed_when: dolphin_group.rc == 0
+  failed_when: dolphin_group.rc != 0 and 'already exists' not in dolphin_group.stderr
+  changed_when: "'already exists' not in dolphin_group.stderr"
 
 - name: Ensure labs@pve user exists
   command: pveum useradd {{ dolphin_api_user }} -group {{ dolphin_api_group }}
   register: dolphin_user
-  failed_when: dolphin_user.rc not in [0, 2]
-  changed_when: dolphin_user.rc == 0
+  failed_when: dolphin_user.rc != 0 and 'already exists' not in dolphin_user.stderr
+  changed_when: "'already exists' not in dolphin_user.stderr"
 
 - name: Grant PVEAdmin role to labs group
   command: pveum aclmod / -group {{ dolphin_api_group }} -role PVEAdmin
   register: dolphin_acl
-  failed_when: dolphin_acl.rc not in [0, 2]
-  changed_when: dolphin_acl.rc == 0
+  failed_when: dolphin_acl.rc != 0 and 'already defined' not in dolphin_acl.stderr
+  changed_when: "'already defined' not in dolphin_acl.stderr"
 
 - name: Add storages with pvesm
   shell: |
