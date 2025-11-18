@@ -1,11 +1,24 @@
 ---
-# Uplink NIC on gamecube (update if different)
+# Physical uplink NIC on gamecube
 olimar_uplink_iface: eno1
 
-# Primary management bridge (vmbr0)
-olimar_vmbr0_address: 192.168.0.20
-olimar_vmbr0_netmask: 255.255.255.0
-olimar_vmbr0_gateway: 192.168.0.1
+# Bridge definitions managed by Olimar
+olimar_bridges:
+  # Primary management / LAN bridge
+  - name: vmbr0
+    method: static
+    address: 192.168.0.20
+    netmask: 255.255.255.0
+    gateway: 192.168.0.1
+    bridge_ports: "{{ olimar_uplink_iface }}"
+    bridge_stp: "off"
+    bridge_fd: "0"
+    autostart: true
 
-# Optional internal bridge (no IP yet)
-olimar_create_vmbr1: true
+  # Example internal bridge (no IP yet)
+  - name: vmbr1
+    method: manual
+    bridge_ports: "none"
+    bridge_stp: "off"
+    bridge_fd: "0"
+    autostart: true

@@ -4,22 +4,29 @@
 auto lo
 iface lo inet loopback
 
+# Physical uplink
 auto {{ olimar_uplink_iface }}
 iface {{ olimar_uplink_iface }} inet manual
 
-auto vmbr0
-iface vmbr0 inet static
-    address {{ olimar_vmbr0_address }}
-    netmask {{ olimar_vmbr0_netmask }}
-    gateway {{ olimar_vmbr0_gateway }}
-    bridge-ports {{ olimar_uplink_iface }}
-    bridge-stp off
-    bridge-fd 0
-
-{% if olimar_create_vmbr1 %}
-auto vmbr1
-iface vmbr1 inet manual
-    bridge-ports none
-    bridge-stp off
-    bridge-fd 0
+# Bridges managed by Olimar
+{% for br in olimar_bridges %}
+auto {{ br.name }}
+iface {{ br.name }} inet {{ br.method }}
+{% if br.method == 'static' %}
+    address {{ br.address }}
+    netmask {{ br.netmask }}
+{% if br.gateway is defined %}
+    gateway {{ br.gateway }}
 {% endif %}
+{% endif %}
+{% if br.bridge_ports is defined %}
+    bridge-ports {{ br.bridge_ports }}
+{% endif %}
+{% if br.bridge_stp is defined %}
+    bridge-stp {{ br.bridge_stp }}
+{% endif %}
+{% if br.bridge_fd is defined %}
+    bridge-fd {{ br.bridge_fd }}
+{% endif %}
+
+{% endfor %}
