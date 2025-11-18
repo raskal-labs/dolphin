@@ -1,0 +1,26 @@
+---
+- name: Check existing /etc/network/interfaces
+  ansible.builtin.stat:
+    path: /etc/network/interfaces
+  register: olimar_interfaces_stat
+
+- name: Backup existing /etc/network/interfaces (timestamped)
+  ansible.builtin.copy:
+    src: /etc/network/interfaces
+    dest: "/etc/network/interfaces.olimar-backup-{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+    remote_src: true
+  when: olimar_interfaces_stat.stat.exists
+  changed_when: false
+
+- name: Render Proxmox network configuration
+  ansible.builtin.template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: "0644"
+
+# Networking reload is intentionally manual for safety.
+# After applying from console:
+#    ifreload -a
+# or reboot during a maintenance window.

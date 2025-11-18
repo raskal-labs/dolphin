@@ -1,0 +1,25 @@
+# Managed by Ansible (olimar role)
+# Original config was backed up as /etc/network/interfaces.olimar-backup-<timestamp>
+
+auto lo
+iface lo inet loopback
+
+auto {{ olimar_uplink_iface }}
+iface {{ olimar_uplink_iface }} inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+    address {{ olimar_vmbr0_address }}
+    netmask {{ olimar_vmbr0_netmask }}
+    gateway {{ olimar_vmbr0_gateway }}
+    bridge-ports {{ olimar_uplink_iface }}
+    bridge-stp off
+    bridge-fd 0
+
+{% if olimar_create_vmbr1 %}
+auto vmbr1
+iface vmbr1 inet manual
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+{% endif %}

@@ -1,0 +1,7 @@
+---
+- name: Configure Proxmox networking (olimar)
+  hosts: gamecube
+  become: true
+
+  roles:
+    - olimar

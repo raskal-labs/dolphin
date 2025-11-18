@@ -31,3 +31,9 @@ hosts:
 
 facts:
 	$(ANSIBLE) -i $(INVENTORY) all -m setup -a 'gather_subset=min'
+
+net:
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/olimar-networking.yaml $(if $(LIMIT),--limit $(LIMIT),)
+
+net-check:
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/olimar-networking.yaml --check $(if $(LIMIT),--limit $(LIMIT),)
