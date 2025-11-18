@@ -1,47 +1,147 @@
-# Dolphin (Proxmox Bootstrap Role)
+# Homelab Bootstrap
 
-Homelab bootstrap role for a single Proxmox VE node.  
-This repo contains an Ansible-based workflow that applies a consistent baseline configuration to your PVE host.
+Ansible-based workflow for configuring a single Proxmox VE 9 node (**gamecube**) in a fully reproducible way.  
+This repo contains multiple roles that layer cleanly on top of each other:
+
+- `dolphin`  (PVE baseline)  
+- `olimar`   (networking)  
+- `blathers` (ZFS datasets + storage layout)
+
+Everything here is idempotent, safe to re-run, and designed for a stateless-style homelab.
+
+# dolphin (Proxmox Bootstrap Role)
+
+Baseline configuration for a fresh Proxmox VE 9 (Debian 13 / trixie) install.
 
 ## Features
 
 - Removes all Proxmox enterprise repositories  
-- Enables the official no-subscription repository (PVE 9 / Debian 13 "trixie")
-- Applies baseline datacenter config (keyboard and console mode)
-- Ensures your API automation group exists (`labs`)
-- Ensures `labs@pve` automation user exists and has `PVEAdmin` role
-- Adds storage definitions using `pvesm` (currently just `local-zfs`)
-- Fully idempotent (safe to re-run)
+- Enables official PVE no-subscription repo  
+- Applies datacenter defaults (`keyboard`, `console`)  
+- Ensures automation group/user (`labs`, `labs@pve`)  
+- Grants `PVEAdmin` at `/`  
+- Adds storage definitions using `pvesm`  
+- Fully idempotent
 
-## Requirements
+## How to Run
 
-- Proxmox VE **9** (Debian **13** / trixie)
-- Ansible installed on your control machine (or on the node itself)
-- SSH access to the target node
-- Your SSH key must be loaded into the agent before pushing/pulling from GitHub
-
-## Directory Layout
-
+```bash
+ansible-playbook -i inventories/prod/hosts.yaml playbooks/bootstrap-dolphin.yaml
 ```
+
+## What it Does (Summary)
+
+1. Confirms PVE is installed  
+2. Removes enterprise/ceph repo files  
+3. Adds PVE no-sub repo  
+4. Updates apt  
+5. Sets datacenter defaults  
+6. Ensures `labs` + `labs@pve`  
+7. Grants permissions  
+8. Defines `local-zfs` storage  
+
+---
+
+# olimar (Networking)
+
+Network configuration handler for `/etc/network/interfaces`.  
+Bridge definitions come from variables, not hard-coded templates.
+
+## Features
+
+- Renders vmbr0, vmbr1, etc, from a list  
+- Timestamped backup of existing interface file  
+- Clean Jinja2 template  
+- Safe to re-run (cold or live)
+
+## How to Run
+
+```bash
+ansible-playbook -i inventories/prod/hosts.yaml playbooks/olimar-networking.yaml
+```
+
+---
+
+# blathers (ZFS Storage Layout)
+
+Creates and manages all ZFS datasets used by the homelab, and registers PVE storages.
+
+## Dataset Layout
+
+```text
+/box1          # infra (system, apps, docs, logs)
+/box2          # personal active data
+/box3          # lifelog + archive
+/disc          # VM ZFS storage (PVE storage: disc)
+/cart          # LXC ZFS storage (PVE storage: cart)
+/memory-card   # backups/archives
+```
+
+### Subdatasets
+
+```text
+box1/system
+box1/apps
+box1/docs
+box1/logs
+
+box2/gallery
+box2/library
+box2/files
+box2/journal
+box2/workshop
+box2/save
+
+box3/lifelog/{sms,calls,location,social,devices}
+box3/archive
+box3/processed
+```
+
+## What Blathers Does
+
+- Creates datasets + subdatasets  
+- Sets mountpoints  
+- Applies ZFS properties (recordsize, compression, logbias)  
+- Registers `disc` + `cart` via `pvesm`  
+- Ensures the structure can be rebuilt exactly from scratch  
+
+## How to Run
+
+```bash
+ansible-playbook -i inventories/prod/hosts.yaml playbooks/blathers-storage.yaml
+```
+
+---
+
+# Directory Layout
+
+```text
 dolphin/
 ├── inventories/
 │   └── prod/
 │       └── hosts.yaml
 ├── playbooks/
 │   ├── bootstrap-dolphin.yaml
+│   ├── olimar-networking.yaml
+│   ├── blathers-storage.yaml
 │   └── roles/
-│       └── dolphin/
+│       ├── dolphin/
+│       │   ├── defaults/
+│       │   └── tasks/
+│       ├── olimar/
+│       │   ├── defaults/
+│       │   └── tasks/
+│       └── blathers/
 │           ├── defaults/
-│           │   └── main.yml
 │           └── tasks/
-│               ├── configure.yml
-│               └── main.yml
 └── README.md
 ```
 
-## Inventory
+---
 
-Define your Proxmox host inside:
+# Inventory
+
+Inventory file:
 
 `inventories/prod/hosts.yaml`
 
@@ -55,44 +155,35 @@ all:
       ansible_user: root
 ```
 
-## How to Run
+---
 
-From the repo root:
+# Snapshots
 
-```bash
-ansible-playbook -i inventories/prod/hosts.yaml playbooks/bootstrap-dolphin.yaml
+Snapshot naming scheme:
+
+```text
+dol-00X-<label>
 ```
 
-If you keep your SSH key locked behind `ssh-agent`, make sure your agent is running and the key is loaded before invoking Ansible.
+Examples:
 
-## What the Playbook Does
+```text
+dol-001-ecco-baseline
+dol-003-olimar-interfaces
+dol-005-blathers-storage
+```
 
-1. Validates Proxmox is installed by calling `pveversion`
-2. Removes:
-   - `pve-enterprise.list`
-   - `pve-enterprise.sources`
-   - `ceph.list`
-   - `ceph-squid.list`
-   - `ceph.sources`
-3. Ensures `/etc/apt/keyrings` exists
-4. Creates the PVE no-subscription repo file:
-   ```
-   deb http://download.proxmox.com/debian/pve trixie pve-no-subscription
-   ```
-5. Runs `apt update`
-6. Writes `/etc/pve/datacenter.cfg`:
-   ```
-   keyboard: en-us
-   console: shell
-   ```
-7. Creates the `labs` group (if missing)
-8. Creates `labs@pve` (if missing)
-9. Grants `PVEAdmin` privileges to the group
-10. Adds storages defined in `defaults/main.yml` using `pvesm`
+Recursive snapshot command:
 
-## Notes
+```bash
+zfs snapshot -r rpool@dol-005-blathers-storage
+```
 
-- This repo is meant for a single-node homelab, not a cluster.
-- You can safely re-run the playbook after Proxmox updates.
-- All tasks are idempotent and won’t duplicate work.
-- When pushing from the PVE node, ensure your SSH agent has the key loaded (e.g. with `ecco`).
+---
+
+# Notes
+
+- Designed for a **single-node PVE homelab**  
+- All tasks are idempotent  
+- Safe to re-run after upgrades  
+- Requires SSH agent (`ecco`) for git pushes  
