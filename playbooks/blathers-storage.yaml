@@ -1,0 +1,7 @@
+---
+- name: Configure ZFS datasets and Proxmox storage (Blathers)
+  hosts: gamecube
+  become: true
+
+  roles:
+    - blathers
