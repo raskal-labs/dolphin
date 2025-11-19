@@ -37,3 +37,6 @@ net:
 
 net-check:
 	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/olimar-networking.yaml --check $(if $(LIMIT),--limit $(LIMIT),)
+
+blathers:
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/blathers-storage.yaml $(if $(LIMIT),--limit $(LIMIT),)

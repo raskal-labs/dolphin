@@ -1,0 +1,7 @@
+---
+- name: Configure AdGuard Home on link-cable
+  hosts: link-cable
+  become: true
+
+  roles:
+    - link-cable

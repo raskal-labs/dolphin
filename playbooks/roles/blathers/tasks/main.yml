@@ -1,68 +1,15 @@
 ---
-- name: Blathers expects community.general.zfs to be installed
-  ansible.builtin.debug:
-    msg: >
-      Install the collection with:
-      ansible-galaxy collection install community.general
-  when: false  # documentation only, never runs
-
+# Blathers: manage ZFS datasets and mountpoints for the homelab layout.
 
 - name: Ensure ZFS datasets exist
   community.general.zfs:
-    name: "{{ item }}"
+    name: "{{ item.name }}"
     state: present
   loop: "{{ blathers_zfs_datasets }}"
 
-
-- name: Set ZFS mountpoints on top-level datasets
-  community.general.zfs:
-    name: "{{ item.name }}"
-    state: present
-    extra_zfs_properties:
-      mountpoint: "{{ item.mountpoint }}"
-  loop: "{{ blathers_zfs_mountpoints }}"
-
-
-- name: Apply ZFS dataset properties
-  community.general.zfs:
-    name: "{{ item.name }}"
-    state: present
-    extra_zfs_properties: "{{ item.properties }}"
-  loop: "{{ blathers_zfs_properties }}"
-
-
-- name: Ensure mountpoint directories exist
-  ansible.builtin.file:
-    path: "{{ item.mountpoint }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-  loop: "{{ blathers_zfs_mountpoints }}"
-
-
-#######################################
-# Proxmox storage entries: disc/cart  #
-#######################################
-
-- name: Check if Proxmox storage definitions already exist
-  ansible.builtin.command: "pvesm list {{ item.id }}"
-  register: blathers_pve_storage_check
-  failed_when: false
-  changed_when: false
-  loop: "{{ blathers_pve_storages }}"
-  loop_control:
-    label: "{{ item.id }}"
-
-
-- name: Add Proxmox ZFS storage for disc/cart
+- name: Ensure ZFS mountpoints are set on top-level datasets
   ansible.builtin.command: >
-    pvesm add zfspool {{ item.0.id }}
-    -pool {{ item.0.pool }}
-    -content {{ item.0.content }}
-    -nodes {{ ansible_nodename }}
-  when: item.1.rc != 0
-  loop: "{{ blathers_pve_storages | zip(blathers_pve_storage_check.results) | list }}"
-  loop_control:
-    label: "{{ item.0.id }}"
-  changed_when: true
+    zfs set mountpoint={{ blathers_zfs_mountpoints[item] }} {{ item }}
+  loop: "{{ blathers_zfs_mountpoints.keys() | list }}"
+  changed_when: false
+

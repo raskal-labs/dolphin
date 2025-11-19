@@ -1,172 +1,43 @@
 ---
-# Blathers: ZFS + storage layout librarian
+blathers_zfs_pool: "rpool"
 
-# All datasets Blathers should ensure exist.
+# Datasets Blathers is responsible for creating/maintaining.
+# Note: we intentionally exclude rpool/cart and rpool/disc now,
+# because those are handled as dir storages in Proxmox.
 blathers_zfs_datasets:
-  # box1 - infra world
-  - rpool/box1
-  - rpool/box1/system
-  - rpool/box1/apps
-  - rpool/box1/apps/link-cable
-  - rpool/box1/docs
-  - rpool/box1/logs
+  - { name: "rpool/box1" }
+  - { name: "rpool/box1/system" }
+  - { name: "rpool/box1/apps" }
+  - { name: "rpool/box1/apps/link-cable" }
+  - { name: "rpool/box1/docs" }
+  - { name: "rpool/box1/logs" }
 
-  # box2 - personal active world
-  - rpool/box2
-  - rpool/box2/gallery
-  - rpool/box2/library
-  - rpool/box2/files
-  - rpool/box2/journal
-  - rpool/box2/workshop
-  - rpool/box2/save
-  - rpool/box2/link
+  - { name: "rpool/box2" }
+  - { name: "rpool/box2/gallery" }
+  - { name: "rpool/box2/library" }
+  - { name: "rpool/box2/files" }
+  - { name: "rpool/box2/journal" }
+  - { name: "rpool/box2/workshop" }
+  - { name: "rpool/box2/save" }
+  - { name: "rpool/box2/link" }
 
-  # box3 - lifelog / data exhaust
-  - rpool/box3
-  - rpool/box3/lifelog
-  - rpool/box3/lifelog/sms
-  - rpool/box3/lifelog/calls
-  - rpool/box3/lifelog/location
-  - rpool/box3/lifelog/social
-  - rpool/box3/lifelog/devices
-  - rpool/box3/archive
-  - rpool/box3/processed
+  - { name: "rpool/box3" }
+  - { name: "rpool/box3/lifelog" }
+  - { name: "rpool/box3/lifelog/sms" }
+  - { name: "rpool/box3/lifelog/calls" }
+  - { name: "rpool/box3/lifelog/location" }
+  - { name: "rpool/box3/lifelog/social" }
+  - { name: "rpool/box3/lifelog/devices" }
+  - { name: "rpool/box3/archive" }
+  - { name: "rpool/box3/processed" }
 
-  # runtime + backups
-  - rpool/disc
-  - rpool/cart
-  - rpool/memory-card
-  - rpool/memory-card/slot-a
-  - rpool/memory-card/slot-b
+  - { name: "rpool/memory-card" }
+  - { name: "rpool/memory-card/slot-a" }
+  - { name: "rpool/memory-card/slot-b" }
 
-
-# Mountpoints to set on top-level datasets
+# Mountpoints Blathers should enforce on top-level datasets.
 blathers_zfs_mountpoints:
-  - { name: "rpool/box1",        mountpoint: "/box1" }
-  - { name: "rpool/box2",        mountpoint: "/box2" }
-  - { name: "rpool/box3",        mountpoint: "/box3" }
-  - { name: "rpool/disc",        mountpoint: "/disc" }
-  - { name: "rpool/cart",        mountpoint: "/cart" }
-  - { name: "rpool/memory-card", mountpoint: "/memory-card" }
-
-
-# Dataset-specific properties (light tuning)
-blathers_zfs_properties:
-  # box1 - infra
-  - name: "rpool/box1"
-    properties:
-      compression: "lz4"
-      atime: "off"
-      xattr: "sa"
-      acltype: "posixacl"
-      dedup: "off"
-      recordsize: "16K"
-
-  # box2 - personal, base
-  - name: "rpool/box2"
-    properties:
-      compression: "lz4"
-      atime: "off"
-      xattr: "sa"
-      acltype: "posixacl"
-      dedup: "off"
-
-  # box3 - lifelog, base
-  - name: "rpool/box3"
-    properties:
-      compression: "lz4"
-      atime: "off"
-      xattr: "sa"
-      acltype: "posixacl"
-      dedup: "off"
-
-  # disc/cart - VM/LXC storage
-  - name: "rpool/disc"
-    properties:
-      compression: "lz4"
-      atime: "off"
-      xattr: "sa"
-      acltype: "posixacl"
-      dedup: "off"
-      logbias: "latency"
-
-  - name: "rpool/cart"
-    properties:
-      compression: "lz4"
-      atime: "off"
-      xattr: "sa"
-      acltype: "posixacl"
-      dedup: "off"
-      logbias: "latency"
-
-  # memory-card base
-  - name: "rpool/memory-card"
-    properties:
-      compression: "lz4"
-      atime: "off"
-      xattr: "sa"
-      acltype: "posixacl"
-      dedup: "off"
-
-  # box2 media tuning
-  - name: "rpool/box2/gallery"
-    properties:
-      recordsize: "1M"
-
-  - name: "rpool/box2/library"
-    properties:
-      recordsize: "1M"
-
-  # box2 working sets
-  - name: "rpool/box2/files"
-    properties:
-      recordsize: "16K"
-
-  - name: "rpool/box2/journal"
-    properties:
-      recordsize: "16K"
-
-  - name: "rpool/box2/workshop"
-    properties:
-      recordsize: "16K"
-
-  - name: "rpool/box2/save"
-    properties:
-      recordsize: "16K"
-
-  - name: "rpool/box2/link"
-    properties:
-      recordsize: "16K"
-
-  # box3 lifelog / processed / archive
-  - name: "rpool/box3/lifelog"
-    properties:
-      recordsize: "16K"
-
-  - name: "rpool/box3/processed"
-    properties:
-      recordsize: "16K"
-
-  - name: "rpool/box3/archive"
-    properties:
-      recordsize: "1M"
-
-  # memory-card slots
-  - name: "rpool/memory-card/slot-a"
-    properties:
-      recordsize: "128K"
-
-  - name: "rpool/memory-card/slot-b"
-    properties:
-      recordsize: "1M"
-      logbias: "throughput"
-
-
-# Proxmox storage definitions Blathers should ensure exist.
-blathers_pve_storages:
-  - id: "disc"
-    pool: "rpool/disc"
-    content: "images,rootdir"
-  - id: "cart"
-    pool: "rpool/cart"
-    content: "rootdir"
+  "rpool/box1": "/box1"
+  "rpool/box2": "/box2"
+  "rpool/box3": "/box3"
+  "rpool/memory-card": "/memory-card"
