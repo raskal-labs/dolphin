@@ -1,4 +1,20 @@
 all:
   hosts:
     gamecube:
-      ansible_connection: local
+      ansible_host: 192.168.0.20
+      ansible_user: root
+
+    link-cable:
+      ansible_host: 192.168.0.30
+      ansible_user: root
+      ansible_port: 22
+      ansible_ssh_pass: "MysteryGift00!"
+
+  children:
+    infra:
+      hosts:
+        gamecube:
+
+    dns:
+      hosts:
+        link-cable:

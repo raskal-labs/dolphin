@@ -1,0 +1,9 @@
+---
+# Where AdGuardHome will be installed (binary + support files)
+link_cable_install_dir: "/opt"
+
+# Data directory inside the container (bind-mounted to /box1/apps/link-cable)
+link_cable_data_dir: "/var/lib/adguardhome"
+
+# Download URL for AdGuard Home linux amd64
+link_cable_download_url: "https://static.adguard.com/adguardhome/release/AdGuardHome_linux_amd64.tar.gz"
