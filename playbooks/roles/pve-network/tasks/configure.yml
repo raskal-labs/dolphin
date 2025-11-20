@@ -7,7 +7,7 @@
 - name: Backup existing /etc/network/interfaces (timestamped)
   ansible.builtin.copy:
     src: /etc/network/interfaces
-    dest: "/etc/network/interfaces.olimar-backup-{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+    dest: "/etc/network/interfaces.pve-network-backup-{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
     remote_src: true
   when: olimar_interfaces_stat.stat.exists
   changed_when: false

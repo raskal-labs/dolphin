@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# git-ssh: ensure ssh-agent is running and the Git key is loaded
+
+set -euo pipefail
+
+KEY_PATH="${KEY_PATH:-$HOME/.ssh/id_ed25519}"
+
+start_agent() {
+  echo "git-ssh: starting new ssh-agent..."
+  eval "$(ssh-agent -s)" >/dev/null
+}
+
+agent_running() {
+  [ -n "${SSH_AUTH_SOCK:-}" ] && ssh-add -l >/dev/null 2>&1
+}
+
+key_loaded() {
+  ssh-add -l 2>/dev/null | grep -q "$KEY_PATH" || return 1
+}
+
+ensure_agent() {
+  if ! agent_running; then
+    start_agent
+  fi
+}
+
+ensure_key_loaded() {
+  if ! key_loaded; then
+    if [ ! -f "$KEY_PATH" ]; then
+      echo "git-ssh: key not found at $KEY_PATH"
+      echo "         generate one or adjust KEY_PATH before using git-ssh."
+      exit 1
+    fi
+    echo "git-ssh: loading key $KEY_PATH"
+    ssh-add "$KEY_PATH"
+  fi
+}
+
+ensure_agent
+ensure_key_loaded
+
+echo "git-ssh: ssh-agent ready (SSH_AUTH_SOCK=$SSH_AUTH_SOCK)"
+ssh-add -l || true

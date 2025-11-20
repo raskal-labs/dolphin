@@ -1,7 +1,7 @@
 ---
-- name: Configure Proxmox networking (olimar)
+- name: Configure Proxmox networking (pve-network)
   hosts: gamecube
   become: true
 
   roles:
-    - olimar
+    - pve-network

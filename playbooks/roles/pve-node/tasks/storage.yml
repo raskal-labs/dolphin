@@ -1,5 +1,5 @@
 ---
-# roles/dolphin/tasks/storage.yml
+# roles/pve-node/tasks/storage.yml
 # Manage Proxmox storage configuration
 
 - name: Ensure storage mountpoints exist
