@@ -1,0 +1,25 @@
+# playbooks/roles/pve-lxc/tasks/main.yml
+
+- name: Ensure pve_lxc_containers is defined and a list
+  ansible.builtin.assert:
+    that:
+      - pve_lxc_containers is defined
+      - pve_lxc_containers is iterable
+    fail_msg: "pve_lxc_containers must be a list of container definitions"
+
+- name: Normalize containers with defaults and template
+  ansible.builtin.set_fact:
+    pve_lxc_containers_normalized: >-
+      {{
+        pve_lxc_containers
+        | map('combine', pve_lxc_defaults)
+        | list
+        | map('combine', {'template': pve_lxc_template})
+        | list
+      }}
+
+- name: Process containers
+  ansible.builtin.include_tasks: container.yml
+  loop: "{{ pve_lxc_containers_normalized }}"
+  loop_control:
+    loop_var: pve_lxc

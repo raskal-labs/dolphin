@@ -26,7 +26,7 @@ Baseline configuration for a fresh Proxmox VE 9 (Debian 13 / trixie) install.
 ## How to Run
 
 ```bash
-ansible-playbook -i inventories/prod/hosts.yaml playbooks/bootstrap-dolphin.yaml
+ansible-playbook -i inventories/prod/hosts.yaml playbooks/pve-bootstrap.yaml
 ```
 
 ## What it Does (Summary)
@@ -57,7 +57,7 @@ Bridge definitions come from variables, not hard-coded templates.
 ## How to Run
 
 ```bash
-ansible-playbook -i inventories/prod/hosts.yaml playbooks/olimar-networking.yaml
+ansible-playbook -i inventories/prod/hosts.yaml playbooks/pve-networking.yaml
 ```
 
 ---
@@ -108,7 +108,7 @@ box3/processed
 ## How to Run
 
 ```bash
-ansible-playbook -i inventories/prod/hosts.yaml playbooks/blathers-storage.yaml
+ansible-playbook -i inventories/prod/hosts.yaml playbooks/zfs-layout.yaml
 ```
 
 ---

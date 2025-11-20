@@ -1,0 +1,36 @@
+# playbooks/roles/pve-lxc/defaults/main.yml
+
+# Node this role manages
+pve_lxc_node_name: "gamecube"
+
+# Default template for new containers
+# This should match whatever Debian LXC template you want as your "golden" base.
+# Right now you are using Debian 12.
+pve_lxc_template: "cart:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
+
+# Global defaults for containers
+pve_lxc_defaults:
+  storage: "cart"          # rootfs lives on cart
+  rootfs_size: "8"         # GB
+  memory: 1024
+  cores: 2
+  swap: 0
+  onboot: true
+  ostype: "debian"         # was "unmanaged" – let Proxmox manage networking, etc
+  features: "nesting=1"
+  net_bridge: "vmbr0"
+  nameserver: "1.1.1.1"    # sane default; override per-CT if needed (like AdGuard)
+  searchdomain: "lan"
+  state: "started"
+
+# Per-node / per-group container definitions
+pve_lxc_containers: []
+
+# Whether to bootstrap SSH in new containers
+pve_lxc_ssh_bootstrap: true
+
+# Path to the host public key injected into new CTs
+pve_lxc_ssh_bootstrap_pubkey_path: "/root/.ssh/id_ed25519_ansible.pub"
+
+# Whether to bring up basic networking in new containers (for first-run SSH)
+pve_lxc_network_bootstrap: true

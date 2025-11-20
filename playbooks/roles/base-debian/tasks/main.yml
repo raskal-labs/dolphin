@@ -1,0 +1,31 @@
+---
+- name: Ensure resolv.conf has usable DNS servers
+  when: base_debian_network_dns is defined and base_debian_network_dns | length > 0
+  copy:
+    dest: /etc/resolv.conf
+    content: |
+      {% for dns in base_debian_network_dns %}
+      nameserver {{ dns }}
+      {% endfor %}
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure apt cache is up to date
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Upgrade all packages to latest release
+  apt:
+    upgrade: "{{ 'dist' if (base_debian_do_dist_upgrade | default(true)) else 'yes' }}"
+    autoremove: yes
+    autoclean: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Ensure base packages are installed
+  apt:
+    name: "{{ base_debian_packages }}"
+    state: present
+  when: base_debian_packages | length > 0

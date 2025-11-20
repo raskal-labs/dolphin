@@ -1,0 +1,16 @@
+---
+base_debian_packages:
+  - ca-certificates
+  - curl
+  - vim-tiny
+  - htop
+  - sudo
+
+base_debian_do_dist_upgrade: true
+
+# Optional networking config. If not set, networking tasks are skipped.
+base_debian_network_interface: null         # e.g. "eth0"
+base_debian_network_address: null           # e.g. "192.168.0.30/24"
+base_debian_network_gateway: null           # e.g. "192.168.0.1"
+base_debian_network_dns: []                 # e.g. ["192.168.0.30"]
+base_debian_network_domains: []             # e.g. ["lan"]

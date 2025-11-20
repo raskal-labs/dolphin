@@ -1,74 +1,63 @@
 ---
-# roles/lxc-adguard/tasks/main.yml
-
-- name: Ensure dependencies are installed
-  ansible.builtin.apt:
-    name:
-      - curl
-      - tar
-    state: present
-    update_cache: true
+# playbooks/roles/lxc-adguard/tasks/main.yml
 
 - name: Ensure AdGuard data directory exists
   ansible.builtin.file:
-    path: "{{ link_cable_data_dir }}"
+    path: /var/lib/adguardhome
     state: directory
     owner: root
     group: root
-    mode: "0700"
+    mode: '0755'
 
-# Download the release tarball
+- name: Check if AdGuardHome binary is already installed
+  ansible.builtin.stat:
+    path: /opt/AdGuardHome/AdGuardHome
+  register: adguard_binary
+
 - name: Download AdGuard Home archive
   ansible.builtin.get_url:
-    url: "{{ link_cable_download_url }}"
-    dest: "{{ link_cable_data_dir }}/AdGuardHome_linux_amd64.tar.gz"
-    mode: "0644"
+    url: "https://static.adguard.com/adguardhome/release/AdGuardHome_linux_amd64.tar.gz"
+    dest: /tmp/AdGuardHome_linux_amd64.tar.gz
+    mode: '0644'
+  when: not adguard_binary.stat.exists
 
-- name: Extract AdGuard Home
+- name: Extract AdGuard Home archive
   ansible.builtin.unarchive:
-    src: "{{ link_cable_data_dir }}/AdGuardHome_linux_amd64.tar.gz"
-    dest: "{{ link_cable_install_dir }}"
+    src: /tmp/AdGuardHome_linux_amd64.tar.gz
+    dest: /opt
     remote_src: true
-  args:
-    creates: "{{ link_cable_install_dir }}/AdGuardHome"
+  when: not adguard_binary.stat.exists
 
 - name: Check if AdGuardHome systemd unit exists
   ansible.builtin.stat:
     path: /etc/systemd/system/AdGuardHome.service
-  register: lxc_adguard_unit
+  register: adguard_unit
 
-- name: Install AdGuard Home as a service (one-time)
+- name: Install AdGuard Home as a service (one time)
   ansible.builtin.command:
-    cmd:
-      - "{{ link_cable_install_dir }}/AdGuardHome/AdGuardHome"
+    argv:
+      - /opt/AdGuardHome/AdGuardHome
       - -s
       - install
       - -c
-      - "{{ link_cable_data_dir }}/AdGuardHome.yaml"
+      - /var/lib/adguardhome/AdGuardHome.yaml
       - -w
-      - "{{ link_cable_data_dir }}"
-  when: not lxc_adguard_unit.stat.exists
+      - /var/lib/adguardhome
+  when: not adguard_unit.stat.exists
+  args:
+    chdir: /opt/AdGuardHome
 
-# NEW: ensure logs dir exists inside the data dir
-- name: Ensure AdGuard logs directory exists
-  ansible.builtin.file:
-    path: "{{ link_cable_data_dir }}/logs"
-    state: directory
-    owner: root
-    group: root
-    mode: "0750"
-
-- name: Deploy canonical AdGuard configuration
+- name: Deploy AdGuardHome configuration
   ansible.builtin.copy:
     src: AdGuardHome.yaml
-    dest: "{{ link_cable_data_dir }}/AdGuardHome.yaml"
+    dest: /var/lib/adguardhome/AdGuardHome.yaml
     owner: root
     group: root
-    mode: "0600"
+    mode: '0644'
   notify: Restart AdGuardHome
 
 - name: Ensure AdGuard Home service is enabled and running
   ansible.builtin.systemd:
-    name: AdGuardHome
-    state: started
+    name: AdGuardHome.service
     enabled: true
+    state: started

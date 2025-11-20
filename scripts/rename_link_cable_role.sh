@@ -31,7 +31,7 @@ fi
 
 ROLE_OLD_DIR="playbooks/roles/${OLD_ROLE}"
 ROLE_NEW_DIR="playbooks/roles/${NEW_ROLE}"
-PLAYBOOK_FILE="playbooks/link-cable-adguard.yaml"
+PLAYBOOK_FILE="playbooks/lxc-adguard.yaml"
 
 if [[ ! -d "$ROLE_OLD_DIR" ]]; then
   echo "Error: $ROLE_OLD_DIR does not exist."

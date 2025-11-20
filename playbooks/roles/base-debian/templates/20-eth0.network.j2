@@ -1,0 +1,14 @@
+[Match]
+Name={{ base_debian_network_interface }}
+
+[Network]
+Address={{ base_debian_network_address }}
+Gateway={{ base_debian_network_gateway }}
+{% if base_debian_network_dns %}
+{% for dns in base_debian_network_dns %}
+DNS={{ dns }}
+{% endfor %}
+{% endif %}
+{% if base_debian_network_domains %}
+Domains={{ base_debian_network_domains | join(" ") }}
+{% endif %}

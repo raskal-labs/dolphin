@@ -1,0 +1,9 @@
+---
+base_debian_network_interface: "eth0"
+base_debian_network_address: "192.168.0.30/24"
+base_debian_network_gateway: "192.168.0.1"
+base_debian_network_dns:
+  - "1.1.1.1"
+  - "1.0.0.1"
+base_debian_network_domains:
+  - "lan"

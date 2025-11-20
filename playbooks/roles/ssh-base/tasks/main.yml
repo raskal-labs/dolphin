@@ -1,0 +1,36 @@
+# playbooks/roles/ssh-base/tasks/main.yml
+---
+- name: Ensure openssh-server is installed
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present
+
+- name: Ensure PermitRootLogin is configured (key-only)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: "PermitRootLogin {{ ssh_base_permit_root_login }}"
+    state: present
+    backrefs: false
+
+- name: Ensure PasswordAuthentication is configured
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: "PasswordAuthentication {{ 'yes' if ssh_base_password_auth else 'no' }}"
+    state: present
+    backrefs: false
+
+- name: Ensure ChallengeResponseAuthentication is disabled
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^ChallengeResponseAuthentication'
+    line: "ChallengeResponseAuthentication no"
+    state: present
+    backrefs: false
+
+- name: Reload SSH service
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded
+  ignore_errors: true

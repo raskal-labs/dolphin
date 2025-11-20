@@ -1,0 +1,17 @@
+pve_lxc_containers:
+  - vmid: 105
+    hostname: "link-cable"
+    ip: "192.168.0.30/24"
+    gateway: "192.168.0.1"
+
+    # Optional overrides (can rely on defaults if you want)
+    memory: 1024
+    cores: 2
+    rootfs_size: "8"
+    state: "started"
+
+    mounts:
+      - id: 0
+        source: "/box1/apps/link-cable"
+        target: "/var/lib/adguardhome"
+        backup: 0

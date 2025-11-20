@@ -2,7 +2,7 @@ ANSIBLE_PLAYBOOK ?= ansible-playbook
 ANSIBLE ?= ansible
 
 INVENTORY ?= inventories/prod/hosts.yaml
-PLAYBOOK ?= playbooks/bootstrap-dolphin.yaml
+PLAYBOOK ?= playbooks/pve-bootstrap.yaml
 LIMIT ?=
 
 export ANSIBLE_CONFIG := $(PWD)/ansible.cfg
@@ -10,12 +10,16 @@ export ANSIBLE_CONFIG := $(PWD)/ansible.cfg
 .DEFAULT_GOAL := help
 
 help:
-	@echo "dolphin controls:"
-	@echo "  make bootstrap        # run full bootstrap playbook"
-	@echo "  make bootstrap-check  # dry-run (check mode)"
+	@echo "homelab controls:"
+	@echo "  make bootstrap        # run full Proxmox bootstrap playbook"
+	@echo "  make bootstrap-check  # dry-run (check mode) for bootstrap"
+	@echo "  make net              # apply Proxmox networking playbook"
+	@echo "  make net-check        # dry-run (check mode) for networking"
+	@echo "  make storage          # apply ZFS layout playbook"
 	@echo "  make ping             # ansible ping all hosts"
 	@echo "  make hosts            # list hosts in inventory"
 	@echo "  make facts            # gather basic facts"
+	@echo "  make adguard-sync     # sync live AdGuard config into Git"
 
 bootstrap:
 	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) $(PLAYBOOK) $(if $(LIMIT),--limit $(LIMIT),)
@@ -33,10 +37,13 @@ facts:
 	$(ANSIBLE) -i $(INVENTORY) all -m setup -a 'gather_subset=min'
 
 net:
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/olimar-networking.yaml $(if $(LIMIT),--limit $(LIMIT),)
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/pve-networking.yaml $(if $(LIMIT),--limit $(LIMIT),)
 
 net-check:
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/olimar-networking.yaml --check $(if $(LIMIT),--limit $(LIMIT),)
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/pve-networking.yaml --check $(if $(LIMIT),--limit $(LIMIT),)
 
-blathers:
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/blathers-storage.yaml $(if $(LIMIT),--limit $(LIMIT),)
+storage:
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/zfs-layout.yaml $(if $(LIMIT),--limit $(LIMIT),)
+
+adguard-sync:
+	./scripts/sync-adguard-config.sh

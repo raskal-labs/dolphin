@@ -96,7 +96,7 @@ querylog:
 statistics:
   dir_path: ""
   ignored: []
-  interval: 2160h
+  interval: 24h
   enabled: true
 filters:
   - enabled: true
@@ -170,7 +170,7 @@ clients:
   persistent: []
 log:
   enabled: true
-  file: /var/lib/adguardhome/logs/adguard.log
+  file: "/var/lib/adguardhome/logs/adguard.log"
   max_backups: 3
   max_size: 100
   max_age: 7

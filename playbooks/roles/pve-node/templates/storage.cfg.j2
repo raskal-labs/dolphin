@@ -1,17 +1,19 @@
 dir: local
-        path /var/lib/vz
-        content iso,vztmpl,backup,snippets
-        maxfiles 5
+    path /var/lib/vz
+    content iso,vztmpl,backup,snippets
+    maxfiles 5
 
 zfspool: local-zfs
-        pool rpool
-        content rootdir,images
-        nodes gamecube
+    pool rpool
+    content rootdir,images
+    nodes {{ inventory_hostname }}
 
 dir: cart
-        path /cart
-        content rootdir,images
+    path /cart
+    content rootdir,vztmpl
+    maxfiles 5
 
 dir: disc
-        path /disc
-        content images
+    path /disc
+    content images
+    maxfiles 5
