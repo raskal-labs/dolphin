@@ -23,12 +23,13 @@ dns:
   ratelimit_whitelist: []
   refuse_any: true
   upstream_dns:
-    - https://dns.quad9.net/dns-query
-    - https://dns.cloudflare.com/dns-query
+    - https://dns10.quad9.net/dns-query
   upstream_dns_file: ""
   bootstrap_dns:
-    - 9.9.9.9
-    - 1.1.1.1
+    - 9.9.9.10
+    - 149.112.112.10
+    - 2620:fe::10
+    - 2620:fe::fe:10
   fallback_dns: []
   upstream_mode: load_balance
   fastest_timeout: 1s
@@ -169,11 +170,11 @@ clients:
   persistent: []
 log:
   enabled: true
-  file: ""
-  max_backups: 0
+  file: "/var/lib/adguardhome/logs/adguard.log"
+  max_backups: 3
   max_size: 100
-  max_age: 3
-  compress: false
+  max_age: 7
+  compress: true
   local_time: false
   verbose: false
 os:
