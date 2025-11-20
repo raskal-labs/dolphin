@@ -43,6 +43,32 @@
   register: pve_lxc_create_result
   changed_when: pve_lxc_create_result.rc == 0
 
+# Force Proxmox to fully recreate the veth pair after fresh container creation.
+# This fixes rare cases where the veth is half-initialized and unreachable.
+- name: Bounce container once after first creation
+  when: not pve_lxc_exists
+  block:
+    - name: Stop CT to force veth reset
+      ansible.builtin.command: "pct stop {{ pve_lxc.vmid }}"
+      register: pve_lxc_stop_after_create
+      failed_when: >
+        pve_lxc_stop_after_create.rc != 0 and
+        'not running' not in (pve_lxc_stop_after_create.stderr | default(''))
+      changed_when: pve_lxc_stop_after_create.rc == 0
+
+    - name: Wait briefly
+      ansible.builtin.pause:
+        seconds: 1
+
+    - name: Start CT again
+      ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
+      register: pve_lxc_start_after_create
+      failed_when: >
+        pve_lxc_start_after_create.rc != 0 and
+        'already running' not in (pve_lxc_start_after_create.stderr | default(''))
+      changed_when: pve_lxc_start_after_create.rc == 0
+
+
 # Optional bootstrap for "unmanaged" containers only
 - name: Bootstrap networking and SSH for unmanaged container {{ pve_lxc.vmid }}
   when:
@@ -131,7 +157,6 @@
 - name: Ensure onboot flag for container {{ pve_lxc.vmid }}
   ansible.builtin.command: >-
     pct set {{ pve_lxc.vmid }} --onboot {{ '1' if pve_lxc.onboot else '0' }}
-  when: pve_lxc_exists
   register: pve_lxc_onboot_result
   changed_when: pve_lxc_onboot_result.rc == 0
 

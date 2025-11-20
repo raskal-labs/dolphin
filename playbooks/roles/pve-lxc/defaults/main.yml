@@ -19,7 +19,7 @@ pve_lxc_defaults:
   ostype: "debian"         # was "unmanaged" – let Proxmox manage networking, etc
   features: "nesting=1"
   net_bridge: "vmbr0"
-  nameserver: "1.1.1.1"    # sane default; override per-CT if needed (like AdGuard)
+  nameserver: "192.168.0.30"    # sane default; override per-CT if needed (like AdGuard)
   searchdomain: "lan"
   state: "started"
 

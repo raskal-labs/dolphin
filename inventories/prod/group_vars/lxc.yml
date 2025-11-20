@@ -1,0 +1,8 @@
+---
+# Default DNS for all LXCs
+base_debian_dns_servers:
+  - "192.168.0.30"   # AdGuard
+  - "1.1.1.1"        # Fallback
+
+base_debian_dns_search_domains:
+  - "lan"

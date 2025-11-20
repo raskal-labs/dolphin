@@ -11,3 +11,11 @@ dolphin_storages:
     type: "zfspool"
     pool: "rpool/data"
     content: "images,rootdir"
+
+# DNS settings for the Proxmox node
+pve_node_dns_servers:
+  - 192.168.0.30   # AdGuard
+  - 1.1.1.1        # Fallback
+
+pve_node_dns_search_domains:
+  - lan

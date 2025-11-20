@@ -8,9 +8,20 @@ base_debian_packages:
 
 base_debian_do_dist_upgrade: true
 
+# Default DNS for Debian guests (LXCs/VMs) managed by this role
+base_debian_dns_servers:
+  - "192.168.0.30"    # AdGuard
+  - "1.1.1.1"         # Fallback
+
+base_debian_dns_search_domains:
+  - "lan"
+
 # Optional networking config. If not set, networking tasks are skipped.
 base_debian_network_interface: null         # e.g. "eth0"
 base_debian_network_address: null           # e.g. "192.168.0.30/24"
 base_debian_network_gateway: null           # e.g. "192.168.0.1"
 base_debian_network_dns: []                 # e.g. ["192.168.0.30"]
 base_debian_network_domains: []             # e.g. ["lan"]
+
+# Only run systemd-networkd wiring when explicitly enabled
+base_debian_manage_networking: false
