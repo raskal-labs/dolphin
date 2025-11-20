@@ -61,3 +61,10 @@
     name: AdGuardHome
     enabled: true
     state: started
+
+- name: Ensure correct permissions on AdGuard data directory
+  file:
+    path: /var/lib/adguardhome
+    owner: root
+    group: root
+    mode: '0700'

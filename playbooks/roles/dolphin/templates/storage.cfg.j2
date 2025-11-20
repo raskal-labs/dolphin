@@ -1,0 +1,17 @@
+dir: local
+        path /var/lib/vz
+        content iso,vztmpl,backup,snippets
+        maxfiles 5
+
+zfspool: local-zfs
+        pool rpool
+        content rootdir,images
+        nodes gamecube
+
+dir: cart
+        path /cart
+        content rootdir,images
+
+dir: disc
+        path /disc
+        content images
