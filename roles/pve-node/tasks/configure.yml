@@ -56,14 +56,3 @@
   register: dolphin_acl
   failed_when: dolphin_acl.rc != 0 and 'already defined' not in dolphin_acl.stderr
   changed_when: "'already defined' not in dolphin_acl.stderr"
-
-- name: Add storages with pvesm
-  shell: |
-    if ! pvesm status | awk 'NR>1{print $1}' | grep -qx '{{ item.id }}'; then
-      pvesm add {{ item.type }} {{ item.id }} -pool {{ item.pool }} -content {{ item.content }}
-    fi
-  args:
-    executable: /bin/bash
-  loop: "{{ dolphin_storages }}"
-  loop_control:
-    label: "{{ item.id }}"

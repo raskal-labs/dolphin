@@ -1,64 +1,101 @@
 ---
-- name: Ensure NetBird system user exists
-  ansible.builtin.user:
-    name: netbird
-    system: yes
-    create_home: no
-    shell: /usr/sbin/nologin
+# roles/netbird-server/tasks/main.yml
+#
+# Deploy NetBird self-hosted stack (management, dashboard, signal, relay, coturn)
+# inside this host (randnet) using Docker Compose and the official configure.sh flow.
 
-- name: Create NetBird config directory
-  ansible.builtin.file:
-    path: /etc/netbird
-    state: directory
-    owner: netbird
-    group: netbird
-    mode: "0750"
+- name: Ensure required packages are installed (Docker, Git, tooling)
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose
+      - git
+      - jq
+      - curl
+      - gettext-base
+    state: present
+    update_cache: true
 
-- name: Deploy NetBird environment file
-  ansible.builtin.template:
-    src: netbird.env.j2
-    dest: /etc/netbird/env
-    owner: netbird
-    group: netbird
-    mode: "0640"
-
-- name: Create tmp dir for NetBird release
-  ansible.builtin.tempfile:
-    state: directory
-    suffix: netbird
-  register: netbird_tmp_dir
-
-- name: Download latest NetBird release
-  ansible.builtin.get_url:
-    url: "https://github.com/netbirdio/netbird/releases/latest/download/netbird_linux_amd64.tar.gz"
-    dest: "{{ netbird_tmp_dir.path }}/netbird.tar.gz"
-    mode: "0644"
-
-- name: Extract NetBird binaries
-  ansible.builtin.unarchive:
-    src: "{{ netbird_tmp_dir.path }}/netbird.tar.gz"
-    dest: "{{ netbird_tmp_dir.path }}"
-    remote_src: yes
-
-- name: Install netbird-mgmt binary
-  ansible.builtin.copy:
-    src: "{{ netbird_tmp_dir.path }}/netbird-mgmt"
-    dest: "{{ netbird_mgmt_bin_path }}"
-    mode: "0755"
-    remote_src: yes
-
-- name: Deploy systemd service file for NetBird management
-  ansible.builtin.template:
-    src: netbird-management.service.j2
-    dest: /etc/systemd/system/netbird-management.service
-    mode: "0644"
-
-- name: Reload systemd
+- name: Ensure Docker service is enabled and running
   ansible.builtin.systemd:
-    daemon_reload: yes
-
-- name: Enable and start NetBird management
-  ansible.builtin.systemd:
-    name: netbird-management
-    enabled: yes
+    name: docker
+    enabled: true
     state: started
+
+- name: Ensure netbird source directory exists
+  ansible.builtin.file:
+    path: /opt/netbird-src
+    state: directory
+    mode: "0755"
+
+- name: Clone or update NetBird repository
+  ansible.builtin.git:
+    repo: "https://github.com/netbirdio/netbird.git"
+    dest: /opt/netbird-src
+    version: "main"
+    depth: 1
+    update: true
+
+- name: Ensure infrastructure_files working dir exists
+  ansible.builtin.file:
+    path: /opt/netbird-src/infrastructure_files
+    state: directory
+    mode: "0755"
+
+- name: Render setup.env from template
+  ansible.builtin.template:
+    src: setup.env.j2
+    dest: /opt/netbird-src/infrastructure_files/setup.env
+    mode: "0600"
+
+- name: Run NetBird configure.sh to generate artifacts
+  ansible.builtin.command:
+    cmd: ./configure.sh
+    chdir: /opt/netbird-src/infrastructure_files
+  register: netbird_configure
+  changed_when: "'artifacts/docker-compose.yml' in netbird_configure.stdout or 'Generating artifacts' in netbird_configure.stdout"
+  environment:
+    NETBIRD_DOMAIN: "{{ netbird_domain }}"
+
+- name: Ensure NetBird runtime directory exists
+  ansible.builtin.file:
+    path: /opt/netbird
+    state: directory
+    mode: "0755"
+
+- name: Copy generated docker-compose.yml
+  ansible.builtin.copy:
+    src: /opt/netbird-src/infrastructure_files/artifacts/docker-compose.yml
+    dest: /opt/netbird/docker-compose.yml
+    mode: "0644"
+    remote_src: true
+
+- name: Copy generated management.json
+  ansible.builtin.copy:
+    src: /opt/netbird-src/infrastructure_files/artifacts/management.json
+    dest: /opt/netbird/management.json
+    mode: "0644"
+    remote_src: true
+
+- name: Copy generated turnserver.conf
+  ansible.builtin.copy:
+    src: /opt/netbird-src/infrastructure_files/artifacts/turnserver.conf
+    dest: /opt/netbird/turnserver.conf
+    mode: "0644"
+    remote_src: true
+
+- name: Ensure NetBird data volume directory exists
+  ansible.builtin.file:
+    path: /opt/netbird/data
+    state: directory
+    mode: "0755"
+
+- name: Bring up NetBird Docker stack
+  ansible.builtin.command:
+    cmd: docker-compose up -d
+    chdir: /opt/netbird
+  register: netbird_compose
+  changed_when: >
+    'Creating' in netbird_compose.stdout or
+    'Recreating' in netbird_compose.stdout or
+    'Starting' in netbird_compose.stdout

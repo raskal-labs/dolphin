@@ -4,13 +4,7 @@ dolphin_api_user: "labs@pve"
 
 dolphin_datacenter_cfg:
   keyboard: "en-us"
-  console: "shell"
-
-dolphin_storages:
-  - id: "local-zfs"
-    type: "zfspool"
-    pool: "rpool/data"
-    content: "images,rootdir"
+  console: "xtermjs"
 
 # DNS settings for the Proxmox node
 pve_node_dns_servers:

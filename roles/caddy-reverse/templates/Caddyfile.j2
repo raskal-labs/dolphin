@@ -1,0 +1,32 @@
+# roles/caddy-reverse/templates/Caddyfile.j2
+
+{
+    email {{ caddy_email }}
+}
+
+# Optional root landing page just to prove Caddy + ACME works.
+# Comment this block out if you don't want raskal.io served here.
+{{ caddy_root_domain }} {
+    respond "warp-zone Caddy is alive" 200
+}
+
+# NetBird management / dashboard on randnet
+{{ caddy_netbird_domain }} {
+    reverse_proxy {{ caddy_netbird_upstream }}:{{ caddy_netbird_dashboard_port }}
+}
+
+# Keycloak (file-select)
+{{ caddy_keycloak_domain }} {
+    reverse_proxy {{ caddy_keycloak_upstream }}:8080
+}
+
+# Proxmox GUI (gamecube)
+# Backend runs its own HTTPS on 8006 with a self-signed cert, so we
+# let Caddy terminate public TLS and talk HTTPS to Proxmox insecurely.
+{{ caddy_proxmox_domain }} {
+    reverse_proxy https://{{ caddy_proxmox_upstream }}:{{ caddy_proxmox_port }} {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}

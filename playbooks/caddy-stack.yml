@@ -1,15 +1,15 @@
 ---
-# playbooks/netbird-stack.yml
-# Provision randnet LXC and install NetBird stack (Docker-based).
+# playbooks/caddy-stack.yml
+# Provision warp-zone LXC and install Caddy reverse proxy.
 
-- name: Provision NetBird stack LXC on Proxmox
+- name: Provision Caddy LXC on Proxmox
   hosts: gamecube
   gather_facts: false
   vars:
     pve_lxc_containers:
-      - vmid: 102
-        hostname: randnet
-        ip: "{{ hostvars['randnet'].base_debian_network_address }}"
+      - vmid: 104
+        hostname: warp-zone
+        ip: "{{ hostvars['warp-zone'].base_debian_network_address }}"
         gateway: "192.168.0.1"
         storage: "cart"
         rootfs_size: "8"
@@ -27,12 +27,10 @@
   roles:
     - role: pve-lxc
 
-- name: Bootstrap Debian base on NetBird LXC
-  hosts: randnet
+- name: Bootstrap Debian base on Caddy LXC
+  hosts: warp-zone
   become: true
   vars:
-    # These may already be in group_vars/netbird_stack.yml;
-    # here they just ensure base-debian sees sane defaults.
     base_debian_network_address: "{{ hostvars[inventory_hostname].base_debian_network_address }}"
     base_debian_network_gateway: "192.168.0.1"
     base_debian_dns_servers:
@@ -44,8 +42,8 @@
     - role: base-debian
     - role: ssh-base
 
-- name: Install and configure NetBird stack (Docker-based)
-  hosts: randnet
+- name: Install and configure Caddy reverse proxy
+  hosts: warp-zone
   become: true
   roles:
-    - role: netbird-server
+    - role: caddy-reverse

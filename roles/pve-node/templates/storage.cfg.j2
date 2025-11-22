@@ -1,19 +1,32 @@
+# roles/pve-node/templates/storage.cfg.j2
+
 dir: local
     path /var/lib/vz
     content iso,vztmpl,backup,snippets
-    maxfiles 5
+    shared 0
 
 zfspool: local-zfs
     pool rpool
     content rootdir,images
     nodes {{ inventory_hostname }}
+    sparse 1
 
 dir: cart
     path /cart
     content rootdir,vztmpl
-    maxfiles 5
+    shared 0
 
 dir: disc
     path /disc
     content images
-    maxfiles 5
+    shared 0
+
+dir: slot-a
+    path /memory-card/slot-a/
+    content backup
+    shared 0
+
+dir: slot-b
+    path /memory-card/slot-b/
+    content backup
+    shared 0

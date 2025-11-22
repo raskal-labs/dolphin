@@ -3,10 +3,9 @@ netbird_domain: "randnet.raskal.io"
 netbird_mgmt_port: 33073
 netbird_signal_port: 33080
 netbird_pre_shared_key: "randnet"
-netbird_mgmt_version: latest
+
+netbird_version: "0.60.2"
+netbird_os: "linux"
+netbird_arch: "amd64"
+
 netbird_mgmt_bin_path: /usr/local/bin/netbird-mgmt
-netbird_mgmt_url: >-
-  https://github.com/netbirdio/netbird/releases/{{
-    'latest/download/netbird-mgmt' if netbird_mgmt_version == 'latest'
-    else 'download/v{}/netbird-mgmt'.format(netbird_mgmt_version)
-  }}

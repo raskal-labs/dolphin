@@ -1,8 +1,0 @@
----
-coturn_listen_port: 3478
-coturn_tls_port: 5349
-coturn_static_auth_secret: jnqy+vXhWUuTiTi+RFMJF3b5FMYmRXX1Qe4qmTziZTo=
-coturn_realm: raskal.io
-coturn_cert: /etc/ssl/certs/turn.pem
-coturn_pkey: /etc/ssl/private/turn.key
-
