@@ -26,7 +26,7 @@ Baseline configuration for a fresh Proxmox VE 9 (Debian 13 / trixie) install.
 ## How to Run
 
 ```bash
-ansible-playbook -i inventories/prod/hosts.yaml playbooks/pve-bootstrap.yaml
+ansible-playbook -i inventories/prod/hosts.yml playbooks/pve-bootstrap.yml
 ```
 
 ## What it Does (Summary)
@@ -57,7 +57,7 @@ Bridge definitions come from variables, not hard-coded templates.
 ## How to Run
 
 ```bash
-ansible-playbook -i inventories/prod/hosts.yaml playbooks/pve-networking.yaml
+ansible-playbook -i inventories/prod/hosts.yml playbooks/pve-networking.yml
 ```
 
 ---
@@ -108,7 +108,7 @@ box3/processed
 ## How to Run
 
 ```bash
-ansible-playbook -i inventories/prod/hosts.yaml playbooks/zfs-layout.yaml
+ansible-playbook -i inventories/prod/hosts.yml playbooks/zfs-layout.yml
 ```
 
 ---
@@ -119,11 +119,11 @@ ansible-playbook -i inventories/prod/hosts.yaml playbooks/zfs-layout.yaml
 dolphin/
 ├── inventories/
 │   └── prod/
-│       └── hosts.yaml
+│       └── hosts.yml
 ├── playbooks/
-│   ├── bootstrap-dolphin.yaml
-│   ├── olimar-networking.yaml
-│   ├── blathers-storage.yaml
+│   ├── bootstrap-dolphin.yml
+│   ├── olimar-networking.yml
+│   ├── blathers-storage.yml
 │   └── roles/
 │       ├── dolphin/
 │       │   ├── defaults/
@@ -143,7 +143,7 @@ dolphin/
 
 Inventory file:
 
-`inventories/prod/hosts.yaml`
+`inventories/prod/hosts.yml`
 
 Example:
 

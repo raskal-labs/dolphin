@@ -1,4 +1,3 @@
-# playbooks/roles/pve-lxc/defaults/main.yml
 
 # Node this role manages
 pve_lxc_node_name: "gamecube"

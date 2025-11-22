@@ -9,8 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Paths
-LIVE_CONFIG="/box1/apps/link-cable/AdGuardHome.yaml"
-REPO_CONFIG="${REPO_ROOT}/playbooks/roles/lxc-adguard/files/AdGuardHome.yaml"
+LIVE_CONFIG="/box1/apps/link-cable/AdGuardHome.yml"
+REPO_CONFIG="${REPO_ROOT}/roles/lxc-adguard/files/AdGuardHome.yml"
 
 echo "==> Repo root: ${REPO_ROOT}"
 echo "==> Live AdGuard config: ${LIVE_CONFIG}"
@@ -45,13 +45,13 @@ echo
 
 # Show a quick diff so you can see what changed
 if command -v git >/dev/null 2>&1; then
-    echo "Git diff for AdGuardHome.yaml:"
+    echo "Git diff for AdGuardHome.yml:"
     echo
-    (cd "${REPO_ROOT}" && git diff -- playbooks/roles/lxc-adguard/files/AdGuardHome.yaml) || true
+    (cd "${REPO_ROOT}" && git diff -- roles/lxc-adguard/files/AdGuardHome.yml) || true
     echo
     echo "Next steps (if you're happy):"
     echo "  cd ${REPO_ROOT}"
-    echo "  git add playbooks/roles/lxc-adguard/files/AdGuardHome.yaml"
+    echo "  git add roles/lxc-adguard/files/AdGuardHome.yml"
     echo "  git commit -m \"Sync AdGuard config from live container\""
 else
     echo "git not found in PATH, skipping diff/commit hints."

@@ -29,9 +29,9 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 1
 fi
 
-ROLE_OLD_DIR="playbooks/roles/${OLD_ROLE}"
-ROLE_NEW_DIR="playbooks/roles/${NEW_ROLE}"
-PLAYBOOK_FILE="playbooks/lxc-adguard.yaml"
+ROLE_OLD_DIR="roles/${OLD_ROLE}"
+ROLE_NEW_DIR="roles/${NEW_ROLE}"
+PLAYBOOK_FILE="playbooks/lxc-adguard.yml"
 
 if [[ ! -d "$ROLE_OLD_DIR" ]]; then
   echo "Error: $ROLE_OLD_DIR does not exist."
@@ -72,7 +72,7 @@ echo
 echo "Done."
 echo "Next steps:"
 echo "  1) Review changes: git diff"
-echo "  2) Test: ansible-playbook $PLAYBOOK_FILE -i inventories/prod/hosts.yaml --limit link-cable"
+echo "  2) Test: ansible-playbook $PLAYBOOK_FILE -i inventories/prod/hosts.yml --limit link-cable"
 echo "  3) If happy: git add . && git commit -m \"Rename link-cable role to lxc-adguard\""
 echo
 echo "If something looks wrong, you can manually reset to the backup ref:"

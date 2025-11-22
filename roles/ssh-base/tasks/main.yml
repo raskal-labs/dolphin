@@ -1,4 +1,3 @@
-# playbooks/roles/ssh-base/tasks/main.yml
 ---
 - name: Ensure openssh-server is installed
   ansible.builtin.apt:

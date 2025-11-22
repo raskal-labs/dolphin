@@ -1,4 +1,3 @@
-# playbooks/roles/pve-lxc/tasks/main.yml
 
 - name: Ensure pve_lxc_containers is defined and a list
   ansible.builtin.assert:

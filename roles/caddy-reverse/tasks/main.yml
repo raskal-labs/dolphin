@@ -1,0 +1,12 @@
+---
+- name: Install Caddy via apt
+  apt:
+    name: caddy
+    state: present
+    update_cache: yes
+
+- name: Enable and start Caddy
+  service:
+    name: caddy
+    enabled: true
+    state: started

@@ -1,8 +1,8 @@
 ANSIBLE_PLAYBOOK ?= ansible-playbook
 ANSIBLE ?= ansible
 
-INVENTORY ?= inventories/prod/hosts.yaml
-PLAYBOOK ?= playbooks/pve-bootstrap.yaml
+INVENTORY ?= inventories/prod/hosts.yml
+PLAYBOOK ?= playbooks/pve-bootstrap.yml
 LIMIT ?=
 
 export ANSIBLE_CONFIG := $(PWD)/ansible.cfg
@@ -37,13 +37,13 @@ facts:
 	$(ANSIBLE) -i $(INVENTORY) all -m setup -a 'gather_subset=min'
 
 net:
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/pve-networking.yaml $(if $(LIMIT),--limit $(LIMIT),)
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/pve-networking.yml $(if $(LIMIT),--limit $(LIMIT),)
 
 net-check:
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/pve-networking.yaml --check $(if $(LIMIT),--limit $(LIMIT),)
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/pve-networking.yml --check $(if $(LIMIT),--limit $(LIMIT),)
 
 storage:
-	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/zfs-layout.yaml $(if $(LIMIT),--limit $(LIMIT),)
+	$(ANSIBLE_PLAYBOOK) -i $(INVENTORY) playbooks/zfs-layout.yml $(if $(LIMIT),--limit $(LIMIT),)
 
 adguard-sync:
 	./scripts/sync-adguard-config.sh

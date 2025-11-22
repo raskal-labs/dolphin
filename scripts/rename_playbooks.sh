@@ -18,10 +18,10 @@ cd "${REPO_ROOT}"
 
 # Mapping: old -> new
 declare -A RENAMES=(
-  ["playbooks/bootstrap-dolphin.yaml"]="playbooks/pve-bootstrap.yaml"
-  ["playbooks/olimar-networking.yaml"]="playbooks/pve-networking.yaml"
-  ["playbooks/blathers-storage.yaml"]="playbooks/zfs-layout.yaml"
-  ["playbooks/link-cable-adguard.yaml"]="playbooks/lxc-adguard.yaml"
+  ["playbooks/bootstrap-dolphin.yml"]="playbooks/pve-bootstrap.yml"
+  ["playbooks/olimar-networking.yml"]="playbooks/pve-networking.yml"
+  ["playbooks/blathers-storage.yml"]="playbooks/zfs-layout.yml"
+  ["playbooks/link-cable-adguard.yml"]="playbooks/lxc-adguard.yml"
 )
 
 if ! $DRY_RUN; then

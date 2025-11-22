@@ -1,0 +1,64 @@
+---
+- name: Ensure NetBird system user exists
+  ansible.builtin.user:
+    name: netbird
+    system: yes
+    create_home: no
+    shell: /usr/sbin/nologin
+
+- name: Create NetBird config directory
+  ansible.builtin.file:
+    path: /etc/netbird
+    state: directory
+    owner: netbird
+    group: netbird
+    mode: "0750"
+
+- name: Deploy NetBird environment file
+  ansible.builtin.template:
+    src: netbird.env.j2
+    dest: /etc/netbird/env
+    owner: netbird
+    group: netbird
+    mode: "0640"
+
+- name: Create tmp dir for NetBird release
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: netbird
+  register: netbird_tmp_dir
+
+- name: Download latest NetBird release
+  ansible.builtin.get_url:
+    url: "https://github.com/netbirdio/netbird/releases/latest/download/netbird_linux_amd64.tar.gz"
+    dest: "{{ netbird_tmp_dir.path }}/netbird.tar.gz"
+    mode: "0644"
+
+- name: Extract NetBird binaries
+  ansible.builtin.unarchive:
+    src: "{{ netbird_tmp_dir.path }}/netbird.tar.gz"
+    dest: "{{ netbird_tmp_dir.path }}"
+    remote_src: yes
+
+- name: Install netbird-mgmt binary
+  ansible.builtin.copy:
+    src: "{{ netbird_tmp_dir.path }}/netbird-mgmt"
+    dest: "{{ netbird_mgmt_bin_path }}"
+    mode: "0755"
+    remote_src: yes
+
+- name: Deploy systemd service file for NetBird management
+  ansible.builtin.template:
+    src: netbird-management.service.j2
+    dest: /etc/systemd/system/netbird-management.service
+    mode: "0644"
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Enable and start NetBird management
+  ansible.builtin.systemd:
+    name: netbird-management
+    enabled: yes
+    state: started

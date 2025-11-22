@@ -1,4 +1,3 @@
-# playbooks/roles/pve-lxc/tasks/container.yml
 
 - name: Assert required fields for container
   ansible.builtin.assert:
@@ -208,3 +207,4 @@
   failed_when: >
     pve_lxc_start_result.rc != 0 and
     'already running' not in (pve_lxc_start_result.stderr | default(''))
+

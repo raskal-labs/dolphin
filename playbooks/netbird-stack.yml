@@ -1,0 +1,62 @@
+---
+# playbooks/netbird-stack.yml
+
+- name: Provision NetBird stack LXCs on Proxmox
+  hosts: gamecube
+  gather_facts: false
+  roles:
+    - role: pve-lxc
+      vars:
+        pve_lxc_containers:
+          - { vmid: 106, hostname: randnet, ip: 192.168.0.34/24, gateway: 192.168.0.1, storage: cart, rootfs_size: 8, memory: 2048, cores: 2, state: started, template: "cart:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", features: "nesting=1", net_bridge: vmbr0 }
+#          - { vmid: 107, hostname: warp-zone, ip: 192.168.0.35/24, gateway: 192.168.0.1, storage: cart, rootfs_size: 8, memory: 1024, cores: 2, state: started, template: "cart:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", features: "nesting=1", net_bridge: vmbr0 }
+ #         - { vmid: 108, hostname: file-select, ip: 192.168.0.46/24, gateway: 192.168.0.1, storage: cart, rootfs_size: 8, memory: 2048, cores: 2, state: started, template: "cart:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", features: "nesting=1", net_bridge: vmbr0 }
+
+- name: Bootstrap Debian base on stack LXCs
+  hosts:
+    - randnet
+    - warp-zone
+    - file-select
+  gather_facts: true
+  pre_tasks:
+    - name: Wait for SSH availability
+      wait_for_connection:
+    - name: Test ping
+      ping:
+  roles:
+    - base-debian
+    - ssh-base
+
+- name: Install and configure NetBird stack
+  hosts:
+    - randnet
+    - warp-zone
+    - file-select
+  gather_facts: true
+  roles:
+    - role: netbird-server
+      when: inventory_hostname == 'randnet'
+    - role: coturn
+      when: inventory_hostname == 'randnet'
+#    - role: caddy-reverse
+ #     when: inventory_hostname == 'warp-zone'
+  #  - role: keycloak
+   #   when: inventory_hostname == 'file-select'
+
+  handlers:
+    - name: restart netbird
+      service:
+        name: netbird-management
+        state: restarted
+    - name: restart caddy
+      service:
+        name: caddy
+        state: restarted
+    - name: restart keycloak
+      service:
+        name: keycloak
+        state: restarted
+    - name: restart coturn
+      service:
+        name: coturn
+        state: restarted

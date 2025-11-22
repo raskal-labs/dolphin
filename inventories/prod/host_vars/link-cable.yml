@@ -2,23 +2,11 @@
 base_debian_network_interface: "eth0"
 base_debian_network_address: "192.168.0.30/24"
 base_debian_network_gateway: "192.168.0.1"
-base_debian_network_dns:
-  - "192.168.0.30"
-base_debian_network_domains:
-  - "lan"
 
-# Override group-wide DNS: link-cable should use itself + upstream,
-# not point back at AdGuard via 192.168.0.30
+# Use itself + upstream for DNS
 base_debian_dns_servers:
   - "127.0.0.1"
   - "1.1.1.1"
 
-base_debian_dns_search_domains:
-  - "lan"
-
-# NEW: DNS inside the CT itself
-base_debian_dns_servers:
-  - "1.1.1.1"
-  - "1.0.0.1"
 base_debian_dns_search_domains:
   - "lan"

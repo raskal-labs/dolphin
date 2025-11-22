@@ -3,15 +3,26 @@ pve_lxc_containers:
     hostname: "link-cable"
     ip: "192.168.0.30/24"
     gateway: "192.168.0.1"
-
-    # Optional overrides (can rely on defaults if you want)
     memory: 1024
     cores: 2
     rootfs_size: "8"
     state: "started"
-
     mounts:
       - id: 0
         source: "/box1/apps/link-cable"
         target: "/var/lib/adguardhome"
+        backup: 0
+
+  - vmid: 106
+    hostname: "randnet"
+    ip: "192.168.0.34/24"
+    gateway: "192.168.0.1"
+    memory: 1024
+    cores: 2
+    rootfs_size: "8"
+    state: "started"
+    mounts:
+      - id: 0
+        source: "/box1/apps/randnet"
+        target: "/opt/randnet-data"
         backup: 0

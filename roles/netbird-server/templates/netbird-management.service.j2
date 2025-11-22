@@ -1,0 +1,11 @@
+[Unit]
+Description=NetBird Management Service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/netbird service management --env-file /etc/netbird/env
+User=netbird
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

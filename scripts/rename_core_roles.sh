@@ -43,14 +43,14 @@ replace_in_files() {
 
 echo "==> Renaming core roles (dolphin, olimar, blathers)..."
 
-rename_dir playbooks/roles/dolphin playbooks/roles/pve-node
-rename_dir playbooks/roles/olimar playbooks/roles/pve-network
-rename_dir playbooks/roles/blathers playbooks/roles/zfs-layout
+rename_dir roles/dolphin roles/pve-node
+rename_dir roles/olimar roles/pve-network
+rename_dir roles/blathers roles/zfs-layout
 
 echo
 echo "==> Updating references inside playbooks..."
 
-yaml_files=$(find playbooks -type f \( -name "*.yml" -o -name "*.yaml" \))
+yaml_files=$(find playbooks -type f \( -name "*.yml" -o -name "*.yml" \))
 
 for f in $yaml_files; do
   echo "  - File: $f"

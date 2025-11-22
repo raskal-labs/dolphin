@@ -1,4 +1,3 @@
-# playbooks/roles/ssh-base/defaults/main.yml
 ---
 # Allow root login but key-only
 ssh_base_permit_root_login: "prohibit-password"

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Run this from the repo root: /root/dolphin
 REPO_ROOT="$(pwd)"
-KEY_DIR="$REPO_ROOT/playbooks/roles/dolphin/files"
+KEY_DIR="$REPO_ROOT/roles/dolphin/files"
 
 mkdir -p "$KEY_DIR"
 

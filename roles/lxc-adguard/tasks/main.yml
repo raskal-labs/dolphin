@@ -1,5 +1,4 @@
 ---
-# playbooks/roles/lxc-adguard/tasks/main.yml
 
 - name: Ensure AdGuard data directory exists
   ansible.builtin.file:
@@ -40,7 +39,7 @@
       - -s
       - install
       - -c
-      - /var/lib/adguardhome/AdGuardHome.yaml
+      - /var/lib/adguardhome/AdGuardHome.yml
       - -w
       - /var/lib/adguardhome
   when: not adguard_unit.stat.exists
@@ -49,8 +48,8 @@
 
 - name: Deploy AdGuardHome configuration
   ansible.builtin.copy:
-    src: AdGuardHome.yaml
-    dest: /var/lib/adguardhome/AdGuardHome.yaml
+    src: AdGuardHome.yml
+    dest: /var/lib/adguardhome/AdGuardHome.yml
     owner: root
     group: root
     mode: '0644'

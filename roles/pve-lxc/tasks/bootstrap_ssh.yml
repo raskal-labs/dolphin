@@ -1,0 +1,17 @@
+- name: Ensure .ssh directory exists in container
+  command: "pct exec {{ item.vmid }} -- mkdir -p /root/.ssh"
+  changed_when: false
+
+- name: Set permissions on .ssh directory
+  command: "pct exec {{ item.vmid }} -- chmod 700 /root/.ssh"
+  changed_when: false
+
+- name: Add public key to authorized_keys
+  command: >
+    pct exec {{ item.vmid }} --
+    /bin/bash -c "echo '{{ lookup('file', '/root/.ssh/id_ed25519_ansible.pub') }}' > /root/.ssh/authorized_keys"
+  changed_when: true
+
+- name: Set permissions on authorized_keys
+  command: "pct exec {{ item.vmid }} -- chmod 600 /root/.ssh/authorized_keys"
+  changed_when: false
