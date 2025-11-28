@@ -1,0 +1,43 @@
+---
+services:
+
+  proxmox:
+    hostname: "gamecube"
+    domain: "gamecube.raskal.io"
+    ip: "192.168.0.20"
+    port: 8006
+
+  netbird:
+    hostname: "randnet"
+    domain: "randnet.raskal.io"
+    ip: "192.168.0.32"
+    ports:
+      dashboard: 80
+      api: 33073
+      signal_http: 80
+      signal_grpc: 10000
+      relay: 33080
+
+  caddy:
+    hostname: "warp-zone"
+    domain: "warp-zone.raskal.io"
+    ip: "192.168.0.34"
+    port: 80  # internal management
+
+  keycloak:
+    hostname: "file-select"
+    domain: "file-select.raskal.io"
+    ip: "192.168.0.36"
+    port: 8080
+
+  adguard:
+    hostname: "link-cable"
+    domain: "link-cable.raskal.io"
+    ip: "192.168.0.30"
+    port: 3000
+
+# Optional wildcard/root domain
+root_domain: "raskal.io"
+
+# ACME email
+acme_email: "labs@raskal.io"

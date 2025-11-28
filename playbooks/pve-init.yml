@@ -1,0 +1,6 @@
+---
+- name: Initialize Proxmox host (gamecube)
+  hosts: gamecube
+  become: true
+  roles:
+    - pve-init

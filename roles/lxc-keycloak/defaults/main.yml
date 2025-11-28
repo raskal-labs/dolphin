@@ -1,0 +1,31 @@
+---
+# roles/lxc-keycloak/defaults/main.yml
+
+# Where Keycloak lives inside the container
+keycloak_root_dir: "/opt/keycloak"
+keycloak_version: "26.0.5"
+keycloak_home: "{{ keycloak_root_dir }}/keycloak-{{ keycloak_version }}"
+keycloak_download_url: "https://github.com/keycloak/keycloak/releases/download/{{ keycloak_version }}/keycloak-{{ keycloak_version }}.tar.gz"
+
+# Database settings (PostgreSQL inside the same LXC)
+keycloak_db_name: "keycloak"
+keycloak_db_user: "keycloak"
+
+# NOTE: override this in group_vars/all/services.yml later if you want it secret.
+keycloak_db_password: "change-me-later"
+
+keycloak_db_host: "127.0.0.1"
+keycloak_db_port: 5432
+
+# Network / host settings
+keycloak_bind_address: "0.0.0.0"
+keycloak_http_port: 8080
+
+# External hostname (what Caddy/front-end uses)
+keycloak_hostname: "file-select.raskal.io"
+keycloak_frontend_url: "https://{{ keycloak_hostname }}"
+keycloak_proxy_mode: "edge"
+
+# Admin bootstrap credentials (used by systemd unit via env vars)
+keycloak_admin_user: "admin"
+keycloak_admin_password: "change-me-admin-later"

@@ -1,0 +1,40 @@
+---
+# pve-init v3 defaults
+
+pve_init_dns:
+  search: "lan"
+  nameservers:
+    - "192.168.0.30"
+    - "1.1.1.1"
+
+pve_init_repos:
+  - "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription"
+  - "deb http://deb.debian.org/debian bookworm main contrib non-free"
+  - "deb http://deb.debian.org/debian-security bookworm-security main contrib non-free"
+  - "deb http://deb.debian.org/debian bookworm-updates main contrib non-free"
+
+pve_init_base_packages:
+  - curl
+  - git
+  - htop
+  - jq
+  - parted
+  - cloud-init
+  - qemu-guest-agent
+  - virt-what
+  - zfsutils-linux
+  - iftop
+  - bmon
+  - ethtool
+  - iperf3
+  - numactl
+
+# Snapshot policy
+pve_zfs_snapshot_pool: "box1"
+pve_zfs_snap_daily: 7
+pve_zfs_snap_weekly: 4
+pve_zfs_snap_monthly: 3
+
+# ZFS disks to monitor
+pve_zfs_smart_disks:
+  - "/dev/disk/by-id/*"

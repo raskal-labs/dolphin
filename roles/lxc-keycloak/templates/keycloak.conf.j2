@@ -1,0 +1,23 @@
+# roles/lxc-keycloak/templates/keycloak.conf.j2
+
+# What the browser sees
+hostname=file-select.raskal.io
+hostname-strict=false
+hostname-strict-https=true
+
+# Hard-code the external URL Keycloak should advertise
+frontend-url=https://file-select.raskal.io
+
+# Behind Caddy doing TLS termination
+proxy=edge
+
+# Internal HTTP listener
+http-enabled=true
+http-host=0.0.0.0
+http-port=8080
+
+# DB
+db=postgres
+db-username=keycloak
+db-password=change-me-later
+db-url=jdbc:postgresql://127.0.0.1:5432/keycloak

@@ -1,0 +1,27 @@
+# roles/lxc-keycloak/templates/keycloak.service.j2
+
+[Unit]
+Description=Keycloak
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+# Admin bootstrap for first start; you can change these in group_vars later
+Environment=KEYCLOAK_ADMIN={{ keycloak_admin_user }}
+Environment=KEYCLOAK_ADMIN_PASSWORD={{ keycloak_admin_password }}
+
+WorkingDirectory={{ keycloak_home }}
+
+# Just start Keycloak; it will use conf/keycloak.conf automatically
+ExecStart={{ keycloak_home }}/bin/kc.sh start
+
+Restart=always
+RestartSec=10
+LimitNOFILE=102642
+
+[Install]
+WantedBy=multi-user.target

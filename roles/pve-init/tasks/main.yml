@@ -1,0 +1,95 @@
+---
+# roles/pve-init/tasks/main.yml
+
+# ------------------------------------------
+# 1. Ensure apt and basic packages
+# ------------------------------------------
+- name: Ensure base packages installed
+  apt:
+    name:
+      - vim
+      - curl
+      - wget
+      - git
+      - htop
+      - net-tools
+      - iproute2
+      - gnupg
+    state: present
+    update_cache: true
+
+# ------------------------------------------
+# 2. Fix Proxmox subscription nag (remove enterprise repo)
+# ------------------------------------------
+- name: Disable enterprise repo if present
+  lineinfile:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    regexp: '^deb'
+    state: absent
+  ignore_errors: true
+
+# ------------------------------------------
+# 3. Enable pve-no-subscription repo
+# ------------------------------------------
+- name: Enable no-subscription repo
+  copy:
+    dest: /etc/apt/sources.list.d/pve-no-subscription.list
+    mode: "0644"
+    content: |
+      deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription
+
+# ------------------------------------------
+# 4. Update package index
+# ------------------------------------------
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+# ------------------------------------------
+# 5. Time sync (Proxmox uses chrony, not systemd-timesyncd)
+# ------------------------------------------
+
+- name: Ensure chrony is installed
+  apt:
+    name: chrony
+    state: present
+    update_cache: yes
+
+- name: Ensure chrony is enabled and running
+  systemd:
+    name: chrony.service
+    enabled: yes
+    state: started
+
+# Optional: restart chrony if config changed (safe no-op otherwise)
+- name: Restart chrony if needed
+  systemd:
+    name: chrony.service
+    state: restarted
+  when: false   # leave disabled unless we add chrony.conf edits later
+
+# ------------------------------------------
+# 6. ZFS scrub timers (weekly)
+# ------------------------------------------
+- name: Enable ZFS weekly scrub timer for pool box1
+  systemd:
+    name: zfs-scrub-weekly@box1.timer
+    enabled: yes
+    state: started
+
+# ------------------------------------------
+# 7. ZFS trim timers (monthly)
+# ------------------------------------------
+- name: Enable ZFS monthly trim timer for pool box1
+  systemd:
+    name: zfs-trim-monthly@box1.timer
+    enabled: yes
+    state: started
+
+# ------------------------------------------
+# 8. Finish
+# ------------------------------------------
+- name: Done
+  debug:
+    msg: "pve-init completed successfully."

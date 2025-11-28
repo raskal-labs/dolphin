@@ -1,0 +1,99 @@
+# roles/lxc-keycloak/tasks/main.yml
+
+- name: Ensure required packages are installed
+  apt:
+    name:
+      - curl
+      - unzip
+      - postgresql
+      - postgresql-client
+    state: present
+    update_cache: true
+  tags:
+    - lxc-keycloak
+    - keycloak-install
+
+- name: Ensure keycloak database exists
+  become: true
+  become_user: postgres
+  shell: >
+    psql -tc "SELECT 1 FROM pg_database WHERE datname = '{{ keycloak_db_name }}'" | grep -q 1
+    || psql -c "CREATE DATABASE {{ keycloak_db_name }}"
+  args:
+    executable: /bin/bash
+  tags:
+    - lxc-keycloak
+    - keycloak-db
+
+- name: Ensure keycloak DB user exists
+  become: true
+  become_user: postgres
+  shell: >
+    psql -tc "SELECT 1 FROM pg_roles WHERE rolname = '{{ keycloak_db_user }}'" | grep -q 1
+    || psql -c "CREATE USER {{ keycloak_db_user }} WITH PASSWORD '{{ keycloak_db_password }}'"
+  args:
+    executable: /bin/bash
+  tags:
+    - lxc-keycloak
+    - keycloak-db
+
+- name: Ensure keycloak user has privileges on keycloak DB
+  become: true
+  become_user: postgres
+  shell: >
+    psql -c "ALTER USER {{ keycloak_db_user }} WITH PASSWORD '{{ keycloak_db_password }}'";
+    psql -c "GRANT ALL PRIVILEGES ON DATABASE {{ keycloak_db_name }} TO {{ keycloak_db_user }}";
+  args:
+    executable: /bin/bash
+  tags:
+    - lxc-keycloak
+    - keycloak-db
+
+- name: Ensure Keycloak base directory exists
+  file:
+    path: "{{ keycloak_home }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - lxc-keycloak
+    - keycloak-install
+
+- name: Deploy keycloak.conf
+  template:
+    src: keycloak.conf.j2
+    dest: "{{ keycloak_home }}/conf/keycloak.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  tags:
+    - lxc-keycloak
+    - keycloak-config
+
+- name: Deploy systemd unit for Keycloak
+  template:
+    src: keycloak.service.j2
+    dest: /etc/systemd/system/keycloak.service
+    owner: root
+    group: root
+    mode: "0644"
+  tags:
+    - lxc-keycloak
+    - keycloak-service
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+  tags:
+    - lxc-keycloak
+    - keycloak-service
+
+- name: Ensure Keycloak service is enabled and running
+  systemd:
+    name: keycloak.service
+    enabled: true
+    state: restarted
+  tags:
+    - lxc-keycloak
+    - keycloak-service
