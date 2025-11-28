@@ -40,6 +40,7 @@
       --onboot {{ '1' if pve_lxc.onboot else '0' }}
       --nameserver {{ pve_lxc.nameserver }}
       --searchdomain {{ pve_lxc.searchdomain }}
+      --ssh-public-keys {{ pve_lxc_ssh_bootstrap_pubkey_path }}
 
 # ------------------------------------------------------------------------------
 
@@ -135,44 +136,6 @@
   register: pve_lxc_onboot_result
   changed_when: pve_lxc_onboot_result.rc == 0
 
-# ------------------------------------------------------------------------------
-
-# Permanent, idempotent SSH bootstrap for ALL containers
-- name: SSH bootstrap for container {{ pve_lxc.vmid }}
-  when: pve_lxc_ssh_bootstrap | default(true)
-  block:
-
-    - name: Ensure container {{ pve_lxc.vmid }} is running for SSH key injection
-      ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
-      register: pve_lxc_ssh_start
-      failed_when: >
-        pve_lxc_ssh_start.rc != 0 and
-        'already running' not in (pve_lxc_ssh_start.stderr | default(''))
-      changed_when: pve_lxc_ssh_start.rc == 0
-
-    - name: Read Ansible SSH public key
-      ansible.builtin.slurp:
-        src: "/root/.ssh/id_ed25519_ansible.pub"
-      register: ansible_pubkey
-
-    - name: Overwrite authorized_keys with Ansible key
-      ansible.builtin.shell: |
-        set -e
-        key="{{ ansible_pubkey.content | b64decode | trim }}"
-        pct exec {{ pve_lxc.vmid }} -- bash -lc '
-          umask 077
-          mkdir -p /root/.ssh
-          printf "%s\n" "$key" > /root/.ssh/authorized_keys
-        '
-      args:
-        executable: /bin/bash
-      changed_when: true
-
-    - name: Fix authorized_keys permissions
-      ansible.builtin.command:
-        cmd: [ pct, exec, "{{ pve_lxc.vmid }}", --, chmod, "600", "/root/.ssh/authorized_keys" ]
-      changed_when: true
-      failed_when: false
 
 # ------------------------------------------------------------------------------
 

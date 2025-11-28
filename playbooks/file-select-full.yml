@@ -1,10 +1,11 @@
 ---
+# playbooks/file-select-full.yml
 - name: Provision file-select LXC on gamecube
   hosts: gamecube
   gather_facts: false
   roles:
     - pve-lxc
-    - ssh-base    # SSH hardening on gamecube (host)
+    - ssh-base    # SSH hardening on gamecube
 
 - name: Bootstrap Debian inside file-select
   hosts: file-select
@@ -22,5 +23,5 @@
 
   roles:
     - base-debian
-    - ssh-base      # key-only SSH inside CT
-    - lxc-keycloak  # Keycloak install/config
+    - ssh-base
+    - lxc-keycloak

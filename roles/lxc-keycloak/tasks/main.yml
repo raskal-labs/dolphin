@@ -1,12 +1,14 @@
 # roles/lxc-keycloak/tasks/main.yml
-
+---
 - name: Ensure required packages are installed
   apt:
     name:
+      - default-jdk
       - curl
       - unzip
       - postgresql
       - postgresql-client
+      - tar
     state: present
     update_cache: true
   tags:
@@ -43,15 +45,18 @@
   shell: >
     psql -c "ALTER USER {{ keycloak_db_user }} WITH PASSWORD '{{ keycloak_db_password }}'";
     psql -c "GRANT ALL PRIVILEGES ON DATABASE {{ keycloak_db_name }} TO {{ keycloak_db_user }}";
+    psql -d {{ keycloak_db_name }} -c "GRANT ALL ON SCHEMA public TO {{ keycloak_db_user }}";
   args:
     executable: /bin/bash
   tags:
     - lxc-keycloak
     - keycloak-db
 
-- name: Ensure Keycloak base directory exists
+# --- INSTALLATION TASKS START ---
+
+- name: Ensure Keycloak root directory exists
   file:
-    path: "{{ keycloak_home }}"
+    path: "{{ keycloak_root_dir }}"
     state: directory
     owner: root
     group: root
@@ -59,6 +64,27 @@
   tags:
     - lxc-keycloak
     - keycloak-install
+
+- name: Download Keycloak archive
+  get_url:
+    url: "{{ keycloak_download_url }}"
+    dest: "/tmp/keycloak-{{ keycloak_version }}.tar.gz"
+    mode: "0644"
+  tags:
+    - lxc-keycloak
+    - keycloak-install
+
+- name: Extract Keycloak archive
+  unarchive:
+    src: "/tmp/keycloak-{{ keycloak_version }}.tar.gz"
+    dest: "{{ keycloak_root_dir }}"
+    remote_src: yes
+    creates: "{{ keycloak_home }}/bin/kc.sh"
+  tags:
+    - lxc-keycloak
+    - keycloak-install
+
+# --- INSTALLATION TASKS END ---
 
 - name: Deploy keycloak.conf
   template:

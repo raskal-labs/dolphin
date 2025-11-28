@@ -1,5 +1,5 @@
-# playbooks/link-cable-full.yml
 ---
+# playbooks/link-cable-full.yml
 - name: Provision link-cable LXC on gamecube
   hosts: gamecube
   gather_facts: false
@@ -9,7 +9,7 @@
 
 - name: Update and baseline Debian inside link-cable
   hosts: link-cable
-  gather_facts: false
+  gather_facts: false  # Wait for SSH before gathering facts
 
   pre_tasks:
     - name: Wait for SSH to be ready on link-cable
@@ -23,5 +23,5 @@
 
   roles:
     - base-debian
-    - ssh-base    # key-only SSH inside CT
+    - ssh-base
     - lxc-adguard

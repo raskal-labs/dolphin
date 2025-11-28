@@ -1,7 +1,5 @@
 ---
 # playbooks/netbird-stack.yml
-# Provision randnet LXC and install NetBird stack (Docker-based).
-
 - name: Provision NetBird stack LXC on Proxmox
   hosts: gamecube
   gather_facts: false
@@ -30,9 +28,20 @@
 - name: Bootstrap Debian base on NetBird LXC
   hosts: randnet
   become: true
+  gather_facts: false
+
+  pre_tasks:
+    - name: Wait for SSH to be ready on randnet
+      wait_for_connection:
+        timeout: 120
+        delay: 10
+        sleep: 5
+
+    - name: Gather facts after SSH is up
+      setup:
+
   vars:
-    # These may already be in group_vars/netbird_stack.yml;
-    # here they just ensure base-debian sees sane defaults.
+    # Infrastructure Vars
     base_debian_network_address: "{{ hostvars[inventory_hostname].base_debian_network_address }}"
     base_debian_network_gateway: "192.168.0.1"
     base_debian_dns_servers:
@@ -40,12 +49,34 @@
       - "1.1.1.1"
     base_debian_dns_search_domains:
       - "lan"
+
+    # Missing OIDC / Auth Config (Pointing to Keycloak)
+    # Update these values after configuring the Realm/Client in Keycloak!
+    netbird_use_auth0: false
+    netbird_auth_oidc_configuration_endpoint: "https://file-select.raskal.io/realms/randnet/.well-known/openid-configuration"
+    netbird_auth_audience: "randnet"
+    netbird_auth_client_id: "randnet"
+    netbird_auth_client_secret: "Nk2xaG0FVrWO1K17Amyfz8YUCaHBvC6G"
+    
+    # NetBird Management Vars
+    netbird_mgmt_dns_domain: "randnet.raskal.io"
+    netbird_mgmt_single_account_mode_domain: "randnet.raskal.io"
+    netbird_relay_endpoint: "turn:randnet.raskal.io:3478"
+    netbird_relay_auth_secret: "CHANGE_ME_TO_SECURE_SECRET"
+    
+    # TURN / Coturn Vars
+    netbird_turn_domain: "randnet.raskal.io"
+    netbird_turn_min_port: 49152
+    netbird_turn_max_port: 65535
+
+    # Tags
+    netbird_management_tag: "latest"
+    netbird_dashboard_tag: "latest"
+    netbird_signal_tag: "latest"
+    netbird_relay_tag: "latest"
+    netbird_coturn_tag: "latest"
+
   roles:
     - role: base-debian
     - role: ssh-base
-
-- name: Install and configure NetBird stack (Docker-based)
-  hosts: randnet
-  become: true
-  roles:
     - role: netbird-server
