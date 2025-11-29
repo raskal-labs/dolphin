@@ -29,7 +29,6 @@
 
 - name: Bootstrap Debian base on NetBird LXC
   hosts: randnet
-  become: true
   gather_facts: false
 
   vars_files:
@@ -45,7 +44,6 @@
     - name: Gather facts after SSH is up
       setup:
 
-  # NO 'vars:' BLOCK HERE
   roles:
     - role: base-debian
     - role: ssh-base
