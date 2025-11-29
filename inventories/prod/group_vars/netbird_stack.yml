@@ -1,4 +1,12 @@
-# netbird_stack.yml
+# inventories/prod/group_vars/netbird_stack.yml
+
+# --- System Defaults ---
+ansible_user: root
+ansible_ssh_private_key_file: /root/.ssh/id_ed25519_ansible
+
+base_debian_network_gateway: "192.168.0.1"
+base_debian_network_interface: "eth0"
+
 base_debian_dns_servers:
   - "192.168.0.30"  # AdGuard
   - "1.1.1.1"       # Fallback
@@ -6,9 +14,36 @@ base_debian_dns_servers:
 base_debian_dns_search_domains:
   - "lan"
 
-base_debian_network_gateway: "192.168.0.1"
-base_debian_network_interface: "eth0"
+# --- NetBird OIDC Configuration (Keycloak) ---
+netbird_use_auth0: false
+# NOTE: Ensure this URL matches your Keycloak Realm Name ('randnet')
+netbird_auth_oidc_configuration_endpoint: "https://file-select.raskal.io/realms/randnet/.well-known/openid-configuration"
+netbird_auth_audience: "randnet"
+netbird_auth_client_id: "randnet"
+# PASTE YOUR REAL SECRET BELOW
+netbird_auth_client_secret: "Nk2xaG0FVrWO1K17Amyfz8YUCaHBvC6G"
 
+# --- NetBird General Settings ---
+netbird_domain: "randnet.raskal.io"
+netbird_mgmt_dns_domain: "randnet.raskal.io"
+netbird_mgmt_single_account_mode_domain: "randnet.raskal.io"
 
-# SSH settings for all hosts in this group
-ansible_user: root
+# --- NetBird Ports & Relay ---
+netbird_mgmt_port: 33073
+netbird_signal_port: 33080
+netbird_pre_shared_key: "f707a71bee99143abfca9f9bbb901bb44faa9de4d35437a909783dadb86fa6df"
+
+netbird_relay_endpoint: "turn:randnet.raskal.io:3478"
+netbird_relay_auth_secret: "qDZZ2U8GTH5UYJpdPJRfkDkvKZJRSXfQkYnN/SB7u4k="
+
+# --- TURN / Coturn ---
+netbird_turn_domain: "randnet.raskal.io"
+netbird_turn_min_port: 49152
+netbird_turn_max_port: 65535
+
+# --- Docker Tags ---
+netbird_management_tag: "latest"
+netbird_dashboard_tag: "latest"
+netbird_signal_tag: "latest"
+netbird_relay_tag: "latest"
+netbird_coturn_tag: "latest"

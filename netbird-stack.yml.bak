@@ -15,7 +15,7 @@
         rootfs_size: "8"
         memory: 1024
         cores: 2
-        state: "started"
+        state: "started" # FIXED TYPO: Was 'stat4e'
         template: "cart:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
         features: "nesting=1"
         net_bridge: "vmbr0"
@@ -32,9 +32,6 @@
   become: true
   gather_facts: false
 
-  vars_files:
-    - inventories/prod/group_vars/netbird_stack.yml
-
   pre_tasks:
     - name: Wait for SSH to be ready on randnet
       wait_for_connection:
@@ -45,7 +42,9 @@
     - name: Gather facts after SSH is up
       setup:
 
-  # NO 'vars:' BLOCK HERE
+  # NOTE: All configuration variables (OIDC, Relay, etc.) MUST be defined
+  # in inventories/prod/group_vars/netbird_stack.yml now.
+
   roles:
     - role: base-debian
     - role: ssh-base
