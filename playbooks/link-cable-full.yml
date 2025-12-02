@@ -23,5 +23,5 @@
 
   roles:
     - base-debian
-    - ssh-base
+    - ssh-base    # key-only SSH inside CT
     - lxc-adguard

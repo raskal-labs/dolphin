@@ -1,6 +1,5 @@
 ---
 # roles/pve-init/tasks/main.yml
-
 # ------------------------------------------
 # 1. Ensure apt and basic packages
 # ------------------------------------------
@@ -67,23 +66,23 @@
   systemd:
     name: chrony.service
     state: restarted
-  when: false   # leave disabled unless we add chrony.conf edits later
+  when: false    # leave disabled unless we add chrony.conf edits later
 
 # ------------------------------------------
 # 6. ZFS scrub timers (weekly)
 # ------------------------------------------
-- name: Enable ZFS weekly scrub timer for pool box1
+- name: "Enable ZFS weekly scrub timer for pool {{ pve_zfs_snapshot_pool }}"
   systemd:
-    name: zfs-scrub-weekly@box1.timer
+    name: "zfs-scrub-weekly@{{ pve_zfs_snapshot_pool }}.timer"
     enabled: yes
     state: started
 
 # ------------------------------------------
 # 7. ZFS trim timers (monthly)
 # ------------------------------------------
-- name: Enable ZFS monthly trim timer for pool box1
+- name: "Enable ZFS monthly trim timer for pool {{ pve_zfs_snapshot_pool }}"
   systemd:
-    name: zfs-trim-monthly@box1.timer
+    name: "zfs-trim-monthly@{{ pve_zfs_snapshot_pool }}.timer"
     enabled: yes
     state: started
 

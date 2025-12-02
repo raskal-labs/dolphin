@@ -136,7 +136,6 @@
   register: pve_lxc_onboot_result
   changed_when: pve_lxc_onboot_result.rc == 0
 
-
 # ------------------------------------------------------------------------------
 
 - name: Ensure container is started when desired
