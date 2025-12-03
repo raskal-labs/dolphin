@@ -1,43 +1,40 @@
+# roles/zfs-layout/defaults/main.yml
 ---
-blathers_zfs_pool: "rpool"
+zfs_pool: "rpool"
 
-# Datasets Blathers is responsible for creating/maintaining.
-# Note: we intentionally exclude rpool/cart and rpool/disc now,
-# because those are handled as dir storages in Proxmox.
-blathers_zfs_datasets:
-  - { name: "rpool/box1" }
-  - { name: "rpool/box1/system" }
-  - { name: "rpool/box1/apps" }
-  - { name: "rpool/box1/apps/link-cable" }
-  - { name: "rpool/box1/docs" }
-  - { name: "rpool/box1/logs" }
+# --- GLOBAL CONTROL VARIABLES ---
+# Enable/disable the entire ZFS layout maintenance by this role.
+zfs_layout_enabled: true
 
-  - { name: "rpool/box2" }
-  - { name: "rpool/box2/gallery" }
-  - { name: "rpool/box2/library" }
-  - { name: "rpool/box2/files" }
-  - { name: "rpool/box2/journal" }
-  - { name: "rpool/box2/workshop" }
-  - { name: "rpool/box2/save" }
-  - { name: "rpool/box2/link" }
+# Enable/disable individual top-level pools
+zfs_box1_enabled: true
+zfs_box2_enabled: false
+zfs_box3_enabled: false
 
-  - { name: "rpool/box3" }
-  - { name: "rpool/box3/lifelog" }
-  - { name: "rpool/box3/lifelog/sms" }
-  - { name: "rpool/box3/lifelog/calls" }
-  - { name: "rpool/box3/lifelog/location" }
-  - { name: "rpool/box3/lifelog/social" }
-  - { name: "rpool/box3/lifelog/devices" }
-  - { name: "rpool/box3/archive" }
-  - { name: "rpool/box3/processed" }
+# Datasets ZFS is responsible for creating/maintaining.
+zfs_datasets:
+  # --- BOX 1 (Mounted at /01) ---
+  - { name: "rpool/box1", mountpoint: "/01", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
+  - { name: "rpool/box1/system", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
+  - { name: "rpool/box1/apps", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
+  
+  # CORRECTED: Point to existing 'link-cable' dataset to preserve history
+  - { name: "rpool/box1/apps/link-cable", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
+  
+  - { name: "rpool/box1/vms", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
+  - { name: "rpool/box1/docs", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
+  - { name: "rpool/box1/logs", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
 
-  - { name: "rpool/memory-card" }
-  - { name: "rpool/memory-card/slot-a" }
-  - { name: "rpool/memory-card/slot-b" }
+  # --- BOX 2 (Mounted at /02) ---
+  - { name: "rpool/box2", mountpoint: "/02", enable: false, pool_enabled: "{{ zfs_box2_enabled }}" }
+  # ... (Add other box2 datasets here if needed, set enable: false) ...
 
-# Mountpoints Blathers should enforce on top-level datasets.
-blathers_zfs_mountpoints:
-  "rpool/box1": "/box1"
-  "rpool/box2": "/box2"
-  "rpool/box3": "/box3"
-  "rpool/memory-card": "/memory-card"
+  # --- BOX 3 (Mounted at /03) ---
+  - { name: "rpool/box3", mountpoint: "/03", enable: false, pool_enabled: "{{ zfs_box3_enabled }}" }
+  # ... (Add other box3 datasets here if needed) ...
+
+  # --- Memory Card (Enabled, standard path) ---
+  - { name: "rpool/memory-card", mountpoint: "/memory-card", enable: true, pool_enabled: true }
+  - { name: "rpool/memory-card/backups", enable: true, pool_enabled: true }
+  - { name: "rpool/memory-card/slot-a", enable: true, pool_enabled: true }
+  - { name: "rpool/memory-card/slot-b", enable: true, pool_enabled: true }

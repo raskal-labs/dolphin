@@ -1,7 +1,0 @@
----
-# roles/caddy-reverse/handlers/main.yml
-
-- name: Reload Caddy
-  ansible.builtin.systemd:
-    name: caddy
-    state: reloaded

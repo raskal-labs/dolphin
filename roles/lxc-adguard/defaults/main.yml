@@ -1,9 +1,22 @@
+# roles/lxc-adguard/defaults/main.yml
 ---
-# Where AdGuardHome will be installed (binary + support files)
-link_cable_install_dir: "/opt"
+# --- Application Pathing ---
+adguard_download_url: "https://static.adguard.com/adguardhome/release/AdGuardHome_linux_amd64.tar.gz"
 
-# Data directory inside the container (bind-mounted to /box1/apps/link-cable)
-link_cable_data_dir: "/var/lib/adguardhome"
+# --- AdGuard Config Defaults (Used in AdGuardHome.yml.j2) ---
+adguard_bind_hosts:
+  - "{{ services['adguard'].ip }}" # Bind to its own IP
+  
+adguard_upstream_dns:
+  - https://dns10.quad9.net/dns-query
+  - https://dns11.quad9.net/dns-query
 
-# Download URL for AdGuard Home linux amd64
-link_cable_download_url: "https://static.adguard.com/adguardhome/release/AdGuardHome_linux_amd64.tar.gz"
+adguard_bootstrap_dns:
+  - 9.9.9.10
+  - 149.112.112.10
+  - 2620:fe::10
+  - 2620:fe::fe:10
+
+adguard_web_port: "{{ services['adguard'].port }}"
+adguard_dns_port: 53
+adguard_api_user: "raskal" # Hash must be in Vault

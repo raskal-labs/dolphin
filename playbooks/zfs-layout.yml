@@ -1,7 +1,7 @@
+# playbooks/zfs-layout.yml
 ---
-- name: Configure ZFS datasets and Proxmox storage (Blathers)
+- name: Configure ZFS Storage Layout
   hosts: gamecube
   become: true
-
   roles:
     - zfs-layout

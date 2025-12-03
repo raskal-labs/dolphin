@@ -1,62 +1,58 @@
+# roles/lxc-adguard/tasks/main.yml
 ---
+# Install AdGuard Home on the container, utilizing bind mounts for persistence.
 
-- name: Ensure AdGuard data directory exists
-  ansible.builtin.file:
-    path: /var/lib/adguardhome
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+- name: Install dependencies (Unarchive/Networking)
+  ansible.builtin.apt:
+    name: [curl, tar, gzip]
+    state: present
+  tags: [adguard, packages]
 
-- name: Check if AdGuardHome binary is already installed
-  ansible.builtin.stat:
-    path: /opt/AdGuardHome/AdGuardHome
-  register: adguard_binary
+- name: Create AdGuard group/user (Required by AdGuard installer)
+  ansible.builtin.user:
+    name: adguard
+    shell: /usr/sbin/nologin
+    system: yes
+    create_home: no
+  tags: [adguard, user]
 
-- name: Download AdGuard Home archive
+- name: Download AdGuardHome archive
   ansible.builtin.get_url:
-    url: "https://static.adguard.com/adguardhome/release/AdGuardHome_linux_amd64.tar.gz"
-    dest: /tmp/AdGuardHome_linux_amd64.tar.gz
-    mode: '0644'
-  when: not adguard_binary.stat.exists
+    url: "{{ adguard_download_url }}"
+    dest: "/tmp/AdGuardHome.tar.gz"
+  tags: [adguard, install]
 
-- name: Extract AdGuard Home archive
+- name: Extract AdGuardHome (only runs if binary does not exist)
   ansible.builtin.unarchive:
-    src: /tmp/AdGuardHome_linux_amd64.tar.gz
-    dest: /opt
+    src: "/tmp/AdGuardHome.tar.gz"
+    dest: "/opt/"
     remote_src: true
-  when: not adguard_binary.stat.exists
+    creates: "/opt/AdGuardHome/AdGuardHome"
+  tags: [adguard, install]
 
-- name: Check if AdGuardHome systemd unit exists
-  ansible.builtin.stat:
-    path: /etc/systemd/system/AdGuardHome.service
-  register: adguard_unit
-
-- name: Install AdGuard Home as a service (one time)
-  ansible.builtin.command:
-    argv:
-      - /opt/AdGuardHome/AdGuardHome
-      - -s
-      - install
-      - -c
-      - /var/lib/adguardhome/AdGuardHome.yml
-      - -w
-      - /var/lib/adguardhome
-  when: not adguard_unit.stat.exists
-  args:
-    chdir: /opt/AdGuardHome
-
-- name: Deploy AdGuardHome configuration
-  ansible.builtin.copy:
-    src: AdGuardHome.yml
-    dest: /var/lib/adguardhome/AdGuardHome.yml
+# We rely on the persistent directories being mounted by pve-lxc
+- name: Deploy initial AdGuardHome configuration (only if config file missing)
+  ansible.builtin.template:
+    src: AdGuardHome.yml.j2
+    dest: /var/lib/adguardhome/AdGuardHome.yaml
     owner: root
     group: root
     mode: '0644'
-  notify: Restart AdGuardHome
+    creates: /var/lib/adguardhome/AdGuardHome.yaml # CRITICAL: Idempotency, do not overwrite user changes
+  notify: Restart AdGuard
+  tags: [adguard, config]
 
-- name: Ensure AdGuard Home service is enabled and running
+- name: Install AdGuard Service (Systemd registration)
+  ansible.builtin.command:
+    cmd: "/opt/AdGuardHome/AdGuardHome -s install -c /var/lib/adguardhome/AdGuardHome.yaml"
+    args:
+      chdir: /opt/AdGuardHome
+      creates: /etc/systemd/system/AdGuardHome.service
+  tags: [adguard, service]
+
+- name: Ensure AdGuard Service is enabled and running
   ansible.builtin.systemd:
-    name: AdGuardHome.service
-    enabled: true
+    name: AdGuardHome
     state: started
+    enabled: true
+  tags: [adguard, service]

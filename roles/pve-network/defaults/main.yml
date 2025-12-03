@@ -1,24 +1,34 @@
+# roles/pve-network/defaults/main.yml
 ---
-# Physical uplink NIC on gamecube
-olimar_uplink_iface: eno1
+pve_uplink_iface: eno1
 
-# Bridge definitions managed by Olimar
-olimar_bridges:
-  # Primary management / LAN bridge
+pve_bridges:
+  # vmbr0: Management and WAN uplink
   - name: vmbr0
     method: static
     address: 192.168.0.20
     netmask: 255.255.255.0
     gateway: 192.168.0.1
-    bridge_ports: "{{ olimar_uplink_iface }}"
+    bridge_ports: "{{ pve_uplink_iface }}"
     bridge_stp: "off"
     bridge_fd: "0"
     autostart: true
+    comment: "PVE Host/WAN Uplink"
 
-  # Example internal bridge (no IP yet)
+  # vmbr1: Internal LAN (e.g., 192.168.10.0/24 subnet)
   - name: vmbr1
     method: manual
-    bridge_ports: "none"
+    bridge_ports: none
     bridge_stp: "off"
     bridge_fd: "0"
     autostart: true
+    comment: "Internal LAN for VMs/CTs"
+
+  # vmbr10: Isolated link for future VM management or diagnostics
+  - name: vmbr10
+    method: manual
+    bridge_ports: none
+    bridge_stp: "off"
+    bridge_fd: "0"
+    autostart: true
+    comment: "Isolated Test/Diag Network"

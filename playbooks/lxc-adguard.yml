@@ -1,7 +1,30 @@
+# playbooks/lxc-adguard.yml
 ---
-- name: Configure AdGuard Home on link-cable
+# 1. Provisioning Phase
+- name: Provision AdGuard LXC (link-cable)
+  hosts: gamecube
+  become: true
+  gather_facts: false
+  
+  tasks:
+    - name: Delegate container creation to pve-lxc role
+      ansible.builtin.include_role:
+        name: pve-lxc
+      vars:
+        # Load variables for 'link-cable' specifically
+        pve_lxc: "{{ hostvars['link-cable']['pve_lxc'] }}"
+
+# 2. Configuration Phase
+- name: Configure AdGuard Home Application
   hosts: link-cable
   become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Wait for SSH connection
+      ansible.builtin.wait_for_connection:
+        timeout: 60
+        delay: 5
 
   roles:
     - lxc-adguard

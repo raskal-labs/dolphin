@@ -1,3 +1,4 @@
+# playbooks/pve-init.yml
 ---
 - name: Initialize Proxmox host (gamecube)
   hosts: gamecube

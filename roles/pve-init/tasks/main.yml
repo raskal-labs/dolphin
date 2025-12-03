@@ -1,10 +1,9 @@
----
 # roles/pve-init/tasks/main.yml
-# ------------------------------------------
-# 1. Ensure apt and basic packages
-# ------------------------------------------
-- name: Ensure base packages installed
-  apt:
+---
+# PVE Initialization: Base packages, repos, time sync, and core SSH key generation.
+
+- name: Install core system packages
+  ansible.builtin.apt:
     name:
       - vim
       - curl
@@ -14,81 +13,53 @@
       - net-tools
       - iproute2
       - gnupg
+      - chrony              # Ensure time sync is installed
+      - zfsutils-linux
     state: present
     update_cache: true
+  tags: [init, packages]
 
-# ------------------------------------------
-# 2. Fix Proxmox subscription nag (remove enterprise repo)
-# ------------------------------------------
-- name: Disable enterprise repo if present
-  lineinfile:
+- name: Configure SSH Automation Key on PVE Host (gamecube)
+  ansible.builtin.user:
+    name: root
+    generate_ssh_key: yes
+    ssh_key_type: ed25519
+    ssh_key_file: /root/.ssh/id_ed25519_ansible
+    ssh_key_comment: "dolphin-ansible-automation"
+  tags: [init, ssh-key]
+
+- name: Disable Proxmox Enterprise Repo
+  ansible.builtin.lineinfile:
     path: /etc/apt/sources.list.d/pve-enterprise.list
     regexp: '^deb'
     state: absent
   ignore_errors: true
+  tags: [init, repos]
 
-# ------------------------------------------
-# 3. Enable pve-no-subscription repo
-# ------------------------------------------
-- name: Enable no-subscription repo
-  copy:
+- name: Enable PVE No-Subscription Repo
+  ansible.builtin.copy:
     dest: /etc/apt/sources.list.d/pve-no-subscription.list
     mode: "0644"
     content: |
       deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription
+  tags: [init, repos]
 
-# ------------------------------------------
-# 4. Update package index
-# ------------------------------------------
-- name: Update apt cache
-  apt:
+- name: Update APT cache after repo changes
+  ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 3600
+  tags: [init, repos]
 
-# ------------------------------------------
-# 5. Time sync (Proxmox uses chrony, not systemd-timesyncd)
-# ------------------------------------------
-
-- name: Ensure chrony is installed
-  apt:
-    name: chrony
-    state: present
-    update_cache: yes
-
-- name: Ensure chrony is enabled and running
-  systemd:
-    name: chrony.service
-    enabled: yes
-    state: started
-
-# Optional: restart chrony if config changed (safe no-op otherwise)
-- name: Restart chrony if needed
-  systemd:
-    name: chrony.service
-    state: restarted
-  when: false    # leave disabled unless we add chrony.conf edits later
-
-# ------------------------------------------
-# 6. ZFS scrub timers (weekly)
-# ------------------------------------------
-- name: "Enable ZFS weekly scrub timer for pool {{ pve_zfs_snapshot_pool }}"
-  systemd:
+- name: Enable ZFS scrub timer (Weekly)
+  ansible.builtin.systemd:
     name: "zfs-scrub-weekly@{{ pve_zfs_snapshot_pool }}.timer"
     enabled: yes
     state: started
+  tags: [init, zfs]
 
-# ------------------------------------------
-# 7. ZFS trim timers (monthly)
-# ------------------------------------------
-- name: "Enable ZFS monthly trim timer for pool {{ pve_zfs_snapshot_pool }}"
-  systemd:
+- name: Enable ZFS trim timer (Monthly)
+  ansible.builtin.systemd:
     name: "zfs-trim-monthly@{{ pve_zfs_snapshot_pool }}.timer"
     enabled: yes
     state: started
-
-# ------------------------------------------
-# 8. Finish
-# ------------------------------------------
-- name: Done
-  debug:
-    msg: "pve-init completed successfully."
+  tags: [init, zfs]

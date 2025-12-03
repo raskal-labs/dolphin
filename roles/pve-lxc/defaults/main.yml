@@ -1,35 +1,61 @@
+# roles/pve-lxc/tasks/container.yml
+# This task handles the creation, mounting, and start/stop of a single LXC.
 
-# Node this role manages
-pve_lxc_node_name: "gamecube"
+- name: Check if container {{ pve_lxc.vmid }} exists
+  delegate_to: gamecube
+  ansible.builtin.command: "pct config {{ pve_lxc.vmid }}"
+  register: pct_config
+  failed_when: false
+  changed_when: false
+  tags: [lxc]
 
-# Default template for new containers
-# This should match whatever Debian LXC template you want as your "golden" base.
-# Right now you are using Debian 12.
-pve_lxc_template: "cart:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
+- name: Build PCT create command
+  ansible.builtin.set_fact:
+    lxc_create_cmd: >
+      pct create {{ pve_lxc.vmid }} {{ pve_lxc.template }}
+      --hostname {{ pve_lxc.hostname }}
+      --cores {{ pve_lxc.cores }}
+      --memory {{ pve_lxc.memory }}
+      --swap {{ pve_lxc.swap | default(0) }}
+      --net0 name=eth0,bridge={{ pve_lxc.net_bridge }},ip={{ pve_lxc.ip }},gw={{ pve_lxc.gateway }}
+      --onboot 1
+      --features nesting=1
+      --ssh-public-keys /root/.ssh/id_ed25519_ansible.pub
+      --rootfs {{ pve_lxc.storage }}:{{ pve_lxc.rootfs_size }}
+      --unprivileged 1
+  tags: [lxc]
 
-# Global defaults for containers
-pve_lxc_defaults:
-  storage: "cart"          # rootfs lives on cart
-  rootfs_size: "8"         # GB
-  memory: 1024
-  cores: 2
-  swap: 0
-  onboot: true
-  ostype: "debian"         # was "unmanaged" – let Proxmox manage networking, etc
-  features: "nesting=1"
-  net_bridge: "vmbr0"
-  nameserver: "192.168.0.30"    # sane default; override per-CT if needed (like AdGuard)
-  searchdomain: "lan"
-  state: "started"
+- name: Create container {{ pve_lxc.vmid }} if missing
+  delegate_to: gamecube
+  ansible.builtin.command: "{{ lxc_create_cmd }}"
+  when: pct_config.rc != 0
+  register: lxc_created
+  tags: [lxc, create]
 
-# Per-node / per-group container definitions
-pve_lxc_containers: []
+- name: Apply Bind Mounts (Update Config)
+  delegate_to: gamecube
+  ansible.builtin.lineinfile:
+    path: "/etc/pve/lxc/{{ pve_lxc.vmid }}.conf"
+    regexp: "^mp{{ idx }}:"
+    line: "mp{{ idx }}: {{ item.source }},mp={{ item.target }},backup={{ item.backup | default(0) }}"
+  loop: "{{ pve_lxc.mounts | default([]) }}"
+  loop_control:
+    index_var: idx
+  notify: Restart LXC
+  tags: [lxc, mounts]
 
-# Whether to bootstrap SSH in new containers
-pve_lxc_ssh_bootstrap: true
-
-# Path to the host public key injected into new CTs
-pve_lxc_ssh_bootstrap_pubkey_path: "/root/.ssh/id_ed25519_ansible.pub"
-
-# Whether to bring up basic networking in new containers (for first-run SSH)
-pve_lxc_network_bootstrap: true
+# Optional bounce to fix veth initialization (only needed on fresh creation)
+- name: Bounce container once after creation
+  delegate_to: gamecube
+  when: lxc_created.changed | default(false)
+  block:
+    - name: Stop CT
+      ansible.builtin.command: "pct stop {{ pve_lxc.vmid }}"
+      register: pct_stop
+      failed_when: pct_stop.rc != 0 and 'not running' not in pct_stop.stderr
+      tags: [lxc]
+    - name: Start CT again
+      ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
+      register: pct_start
+      failed_when: pct_start.rc != 0 and 'already running' not in pct_start.stderr
+      tags: [lxc]

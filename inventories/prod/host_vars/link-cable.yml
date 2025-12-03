@@ -1,12 +1,28 @@
+# inventories/prod/host_vars/link-cable.yml
 ---
-base_debian_network_interface: "eth0"
-base_debian_network_address: "192.168.0.30/24"
-base_debian_network_gateway: "192.168.0.1"
+# AdGuard LXC (link-cable) Host Variables
 
-# Use itself + upstream for DNS
-base_debian_dns_servers:
-  - "127.0.0.1"
-  - "1.1.1.1"
+# We look up 'adguard' in the services list because that is the logical SERVICE name,
+# even if the HOSTNAME is 'link-cable'.
+{% set svc = services['adguard'] %}
 
-base_debian_dns_search_domains:
-  - "lan"
+pve_lxc:
+  vmid: "{{ svc.vmid }}"
+  hostname: "{{ svc.hostname }}" # "link-cable"
+  template: "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
+  cores: 1
+  memory: 512
+  storage: local-zfs
+  rootfs_size: 4G
+  net_bridge: vmbr0
+  ip: "{{ svc.ip }}/24"
+  gateway: 192.168.0.1
+  
+  # PERSISTENCE: Pointing to existing 'link-cable' data on the host ZFS
+  mounts:
+    - id: 0
+      source: /box1/apps/link-cable/conf
+      target: /var/lib/adguardhome/conf
+    - id: 1
+      source: /box1/apps/link-cable/work
+      target: /var/lib/adguardhome/work

@@ -1,17 +1,21 @@
-# Managed by Ansible (olimar role)
-# Original config was backed up as /etc/network/interfaces.olimar-backup-<timestamp>
+# roles/pve-network/templates/interfaces.j2
+# Managed by Ansible (pve-network role)
+# WARNING: This file is fully managed. Manual changes will be overwritten.
 
 auto lo
 iface lo inet loopback
 
 # Physical uplink
-auto {{ olimar_uplink_iface }}
-iface {{ olimar_uplink_iface }} inet manual
+auto {{ pve_uplink_iface }}
+iface {{ pve_uplink_iface }} inet manual
 
-# Bridges managed by Olimar
-{% for br in olimar_bridges %}
+# Bridges managed by Ansible
+{% for br in pve_bridges %}
 auto {{ br.name }}
 iface {{ br.name }} inet {{ br.method }}
+{% if br.comment is defined and br.comment | length > 0 %}
+  # {{ br.comment }}
+{% endif %}
 {% if br.method == 'static' %}
     address {{ br.address }}
     netmask {{ br.netmask }}

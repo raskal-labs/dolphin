@@ -1,148 +1,61 @@
 # roles/pve-lxc/tasks/container.yml
-
-- name: Assert required fields for container
-  ansible.builtin.assert:
-    that:
-      - pve_lxc.vmid is defined
-      - pve_lxc.hostname is defined
-      - pve_lxc.ip is defined
-      - pve_lxc.gateway is defined
-      - pve_lxc.template is defined
-      - pve_lxc.storage is defined
-    fail_msg: "Each container needs vmid, hostname, ip, gateway, template, storage"
-
-# ------------------------------------------------------------------------------
+# This task handles the creation, mounting, and start/stop of a single LXC.
 
 - name: Check if container {{ pve_lxc.vmid }} exists
+  delegate_to: gamecube
   ansible.builtin.command: "pct config {{ pve_lxc.vmid }}"
-  register: pve_lxc_config
+  register: pct_config
   failed_when: false
   changed_when: false
+  tags: [lxc]
 
-- name: Set flag if container exists
+- name: Build PCT create command
   ansible.builtin.set_fact:
-    pve_lxc_exists: "{{ pve_lxc_config.rc == 0 }}"
-
-# ------------------------------------------------------------------------------
-
-- name: Build pct create command for {{ pve_lxc.vmid }}
-  ansible.builtin.set_fact:
-    pve_lxc_create_cmd: >-
+    lxc_create_cmd: >
       pct create {{ pve_lxc.vmid }} {{ pve_lxc.template }}
       --hostname {{ pve_lxc.hostname }}
-      --ostype {{ pve_lxc.ostype }}
-      --rootfs {{ pve_lxc.storage }}:{{ pve_lxc.rootfs_size }}
-      --memory {{ pve_lxc.memory }}
       --cores {{ pve_lxc.cores }}
-      --swap {{ pve_lxc.swap }}
-      --features {{ pve_lxc.features }}
+      --memory {{ pve_lxc.memory }}
+      --swap {{ pve_lxc.swap | default(0) }}
       --net0 name=eth0,bridge={{ pve_lxc.net_bridge }},ip={{ pve_lxc.ip }},gw={{ pve_lxc.gateway }}
-      --onboot {{ '1' if pve_lxc.onboot else '0' }}
-      --nameserver {{ pve_lxc.nameserver }}
-      --searchdomain {{ pve_lxc.searchdomain }}
-      --ssh-public-keys {{ pve_lxc_ssh_bootstrap_pubkey_path }}
-
-# ------------------------------------------------------------------------------
+      --onboot 1
+      --features nesting=1
+      --ssh-public-keys /root/.ssh/id_ed25519_ansible.pub
+      --rootfs {{ pve_lxc.storage }}:{{ pve_lxc.rootfs_size }}
+      --unprivileged 1
+  tags: [lxc]
 
 - name: Create container {{ pve_lxc.vmid }} if missing
-  ansible.builtin.command: "{{ pve_lxc_create_cmd }}"
-  when: not pve_lxc_exists
-  register: pve_lxc_create_result
-  changed_when: pve_lxc_create_result.rc == 0
+  delegate_to: gamecube
+  ansible.builtin.command: "{{ lxc_create_cmd }}"
+  when: pct_config.rc != 0
+  register: lxc_created
+  tags: [lxc, create]
 
-# ------------------------------------------------------------------------------
+- name: Apply Bind Mounts (Update Config)
+  delegate_to: gamecube
+  ansible.builtin.lineinfile:
+    path: "/etc/pve/lxc/{{ pve_lxc.vmid }}.conf"
+    regexp: "^mp{{ idx }}:"
+    line: "mp{{ idx }}: {{ item.source }},mp={{ item.target }},backup={{ item.backup | default(0) }}"
+  loop: "{{ pve_lxc.mounts | default([]) }}"
+  loop_control:
+    index_var: idx
+  notify: Restart LXC
+  tags: [lxc, mounts]
 
-- name: Bounce container once after first creation to fix veth initialization
-  when: not pve_lxc_exists
+# Optional bounce to fix veth initialization (only needed on fresh creation)
+- name: Bounce container once after creation
+  delegate_to: gamecube
+  when: lxc_created.changed | default(false)
   block:
-    - name: Stop CT to force veth reset
+    - name: Stop CT
       ansible.builtin.command: "pct stop {{ pve_lxc.vmid }}"
-      register: pve_lxc_stop_after_create
-      failed_when: >
-        pve_lxc_stop_after_create.rc != 0 and
-        'not running' not in (pve_lxc_stop_after_create.stderr | default(''))
-      changed_when: pve_lxc_stop_after_create.rc == 0
-
-    - name: Wait briefly for veth cleanup
-      ansible.builtin.pause:
-        seconds: 1
-
+      register: pct_stop
+      failed_when: pct_stop.rc != 0 and 'not running' not in pct_stop.stderr
+      tags: [lxc]
     - name: Start CT again
       ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
-      register: pve_lxc_start_after_create
-      failed_when: >
-        pve_lxc_start_after_create.rc != 0 and
-        'already running' not in (pve_lxc_start_after_create.stderr | default(''))
-      changed_when: pve_lxc_start_after_create.rc == 0
-
-# ------------------------------------------------------------------------------
-
-- name: Optional bootstrap networking for unmanaged OS types
-  when:
-    - pve_lxc_network_bootstrap | default(true)
-    - (pve_lxc.ostype | default('unmanaged')) == 'unmanaged'
-  block:
-
-    - name: Ensure container {{ pve_lxc.vmid }} is started for network bootstrap
-      ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
-      register: pve_lxc_bootstrap_start
-      failed_when: >
-        pve_lxc_bootstrap_start.rc != 0 and
-        'already running' not in (pve_lxc_bootstrap_start.stderr | default(''))
-      changed_when: pve_lxc_bootstrap_start.rc == 0
-
-    - name: Bring up eth0
-      ansible.builtin.command:
-        cmd: [ pct, exec, "{{ pve_lxc.vmid }}", --, ip, link, set, eth0, up ]
-      changed_when: false
-      failed_when: false
-
-    - name: Assign IP address
-      ansible.builtin.command:
-        cmd: [ pct, exec, "{{ pve_lxc.vmid }}", --, ip, addr, add, "{{ pve_lxc.ip }}", dev, eth0 ]
-      register: pve_lxc_bootstrap_ip
-      changed_when: pve_lxc_bootstrap_ip.rc == 0
-      failed_when: >
-        pve_lxc_bootstrap_ip.rc != 0 and
-        'File exists' not in (pve_lxc_bootstrap_ip.stderr | default(''))
-
-    - name: Add default route inside container
-      ansible.builtin.command:
-        cmd: [ pct, exec, "{{ pve_lxc.vmid }}", --, ip, route, add, default, via, "{{ pve_lxc.gateway }}" ]
-      register: pve_lxc_bootstrap_route
-      changed_when: pve_lxc_bootstrap_route.rc == 0
-      failed_when: >
-        pve_lxc_bootstrap_route.rc != 0 and
-        'File exists' not in (pve_lxc_bootstrap_route.stderr | default(''))
-
-# ------------------------------------------------------------------------------
-
-- name: Ensure mountpoints for container {{ pve_lxc.vmid }}
-  when: pve_lxc.mounts is defined and pve_lxc.mounts | length > 0
-  block:
-    - name: Ensure mountpoint entries exist
-      ansible.builtin.lineinfile:
-        path: "/etc/pve/lxc/{{ pve_lxc.vmid }}.conf"
-        regexp: "^mp{{ item.id }}:"
-        line: "mp{{ item.id }}: {{ item.source }},mp={{ item.target }},backup={{ item.backup | default(0) }}"
-      loop: "{{ pve_lxc.mounts }}"
-      loop_control:
-        loop_var: item
-
-# ------------------------------------------------------------------------------
-
-- name: Ensure onboot flag
-  ansible.builtin.command: "pct set {{ pve_lxc.vmid }} --onboot {{ '1' if pve_lxc.onboot else '0' }}"
-  register: pve_lxc_onboot_result
-  changed_when: pve_lxc_onboot_result.rc == 0
-
-# ------------------------------------------------------------------------------
-
-- name: Ensure container is started when desired
-  ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
-  when: pve_lxc.state | default('started') == 'started'
-  register: pve_lxc_start_result
-  changed_when: pve_lxc_start_result.rc == 0
-  failed_when: >
-    pve_lxc_start_result.rc != 0 and
-    'already running' not in (pve_lxc_start_result.stderr | default(''))
+      register: pct_start
+      failed_when: pct_start.rc != 0 and 'already running' not in pct_start.stderr
+      tags: [lxc]

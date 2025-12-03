@@ -1,24 +1,31 @@
+# roles/pve-lxc/tasks/main.yml
+---
+# Main entry point for LXC management. Requires pve_lxc variable (single container definition).
 
-- name: Ensure pve_lxc_containers is defined and a list
+- name: Assert container definition is provided
   ansible.builtin.assert:
     that:
-      - pve_lxc_containers is defined
-      - pve_lxc_containers is iterable
-    fail_msg: "pve_lxc_containers must be a list of container definitions"
+      - pve_lxc is defined
+      - pve_lxc.vmid is defined
+      - pve_lxc.hostname is defined
+    fail_msg: "LXC container configuration (pve_lxc) is required."
+  run_once: true
+  tags: [lxc]
 
-- name: Normalize containers with defaults and template
-  ansible.builtin.set_fact:
-    pve_lxc_containers_normalized: >-
-      {{
-        pve_lxc_containers
-        | map('combine', pve_lxc_defaults)
-        | list
-        | map('combine', {'template': pve_lxc_template})
-        | list
-      }}
+# --- Create Bind Mount Directories on PVE Host (Stateful Data) ---
+- name: Ensure host bind-mount source directories exist for persistent data
+  delegate_to: gamecube
+  ansible.builtin.file:
+    path: "{{ item.source }}"
+    state: directory
+    # Set owner/group to 100000/100000 (root inside the unprivileged CT)
+    owner: 100000 
+    group: 100000
+    mode: '0755'
+  loop: "{{ pve_lxc.mounts | default([]) }}"
+  tags: [lxc, storage, mounts]
 
-- name: Process containers
-  ansible.builtin.include_tasks: container.yml
-  loop: "{{ pve_lxc_containers_normalized }}"
-  loop_control:
-    loop_var: pve_lxc
+# --- Create or Update Container ---
+- name: Create or Update LXC Container
+  ansible.builtin.import_tasks: container.yml
+  tags: [lxc, create, config]
