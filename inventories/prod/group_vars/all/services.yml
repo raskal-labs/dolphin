@@ -14,6 +14,7 @@ services:
     domain: "link-cable.raskal.io"
     ip: "192.168.0.30"
     port: 3000
+    vmid: 105
 
 # Global variables
 root_domain: "raskal.io"

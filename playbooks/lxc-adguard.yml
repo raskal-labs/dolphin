@@ -19,6 +19,10 @@
   become: true
   gather_facts: true
 
+  # Load the logos here so they are available for the success card
+  vars_files:
+    - "../assets/logos.yml"
+
   pre_tasks:
     - name: Wait for SSH connection
       ansible.builtin.wait_for_connection:
@@ -30,44 +34,6 @@
 
   # --- INFRASTRUCTURE SUMMARY CARD ---
   post_tasks:
-    - name: Display Service Information
-      vars:
-        # Dynamically find the host source paths from the pve_lxc variable
-        # We look for the mount that targets the 'conf' and 'work' directories
-
-
-        mount_conf: "{{ hostvars['link-cable']['pve_lxc']['mounts'] | selectattr('target', 'search', 'conf') | map(attribute='source') | first }}"
-        mount_work: "{{ hostvars['link-cable']['pve_lxc']['mounts'] | selectattr('target', 'search', 'work') | map(attribute='source') | first }}"
-      ansible.builtin.debug:
-        msg:
-          - "{{ adguard_ascii_logo }}"
-          - "{{ adguard_ascii_install_success }}"
-        msg: |
-          - "{{ adguard_ascii_logo }}" 
-          - " {{ adguard_ascii_install_success }}"
-          - ""
-          - "AdGuard home"
-          - ""
-          - "✅ INSTALLATION COMPLETE: AdGuard Home"
-          - ""
-          - "📡 CONNECTION INFO:"
-          - "  - Host: {{ inventory_hostname }}"
-          - "  - IP Address: {{ ansible_host | default('N/A') }}"
-          - "  - Web UI:      http://{{ ansible_host }}:{{ adguard_web_port | default(3000) }}"
-          - "  - DNS Server:  {{ ansible_host }}:{{ adguard_dns_port | default(53) }}"
-          - ""
-          - "🔑 CREDENTIALS:"
-          - "  - User:        {{ adguard_api_user | default('raskal') }}"
-          - "  - Password:    adguard  (Default, unless changed in vault)"
-          - ""
-          - "💾 STATEFUL DATA (ZFS PERSISTENCE):"
-          - "  - Config File (Host):      {{ mount_conf }}/AdGuardHome.yaml"
-          - "  - Config File (Container): /var/lib/adguardhome/conf/AdGuardHome.yaml"
-          - "  - Working Dir (Host):      {{ mount_work }}/"
-          - "  - Working Dir (Container): /var/lib/adguardhome/work/"
-          - ""
-          - "🛡️  INFRASTRUCTURE STATUS:"
-          - "  - Container ID: {{ hostvars['link-cable']['pve_lxc']['vmid'] }} (Stateless)"
-          - "  - Action:       This container can be destroyed and recreated safely."
-          - "                  All logs and settings are preserved on the Host ZFS."
-          - "======================================================================"
+    - name: Include Final Summary Card
+      ansible.builtin.include_tasks:
+        file: roles/lxc-adguard/tasks/success.yml
