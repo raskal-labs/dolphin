@@ -1,0 +1,15 @@
+# site.yml
+---
+# 1. Initialize Host (SSH keys, Repos, Packages)
+- import_playbook: playbooks/pve-init.yml
+
+# 2. Configure Storage (ZFS Datasets)
+- import_playbook: playbooks/zfs-layout.yml
+
+# 3. Configure Networking (Bridges)
+# Note: This stages the config but usually requires a reboot or 'ifreload -a' to apply safe changes.
+- import_playbook: playbooks/pve-networking.yml
+
+# 4. Provision & Deploy Apps (AdGuard)
+# This depends on Step 1 (SSH keys) and Step 2 (Storage mounts) existing.
+- import_playbook: playbooks/lxc-adguard.yml

@@ -8,7 +8,7 @@
     state: present
   tags: [adguard, packages]
 
-- name: Create AdGuard group/user (Required by AdGuard installer)
+- name: Create AdGuard group/user
   ansible.builtin.user:
     name: adguard
     shell: /usr/sbin/nologin
@@ -22,7 +22,7 @@
     dest: "/tmp/AdGuardHome.tar.gz"
   tags: [adguard, install]
 
-- name: Extract AdGuardHome (only runs if binary does not exist)
+- name: Extract AdGuardHome
   ansible.builtin.unarchive:
     src: "/tmp/AdGuardHome.tar.gz"
     dest: "/opt/"
@@ -30,21 +30,21 @@
     creates: "/opt/AdGuardHome/AdGuardHome"
   tags: [adguard, install]
 
-# We rely on the persistent directories being mounted by pve-lxc
-- name: Deploy initial AdGuardHome configuration (only if config file missing)
+- name: Deploy initial AdGuardHome configuration
   ansible.builtin.template:
     src: AdGuardHome.yml.j2
-    dest: /var/lib/adguardhome/AdGuardHome.yaml
+    dest: /var/lib/adguardhome/conf/AdGuardHome.yaml
     owner: root
     group: root
     mode: '0644'
-    creates: /var/lib/adguardhome/AdGuardHome.yaml # CRITICAL: Idempotency, do not overwrite user changes
+    creates: /var/lib/adguardhome/conf/AdGuardHome.yaml # Respect user changes (Idempotent)
   notify: Restart AdGuard
   tags: [adguard, config]
 
-- name: Install AdGuard Service (Systemd registration)
+- name: Install AdGuard Service
   ansible.builtin.command:
-    cmd: "/opt/AdGuardHome/AdGuardHome -s install -c /var/lib/adguardhome/AdGuardHome.yaml"
+    # Point -c to the persistent config file
+    cmd: "/opt/AdGuardHome/AdGuardHome -s install -c /var/lib/adguardhome/conf/AdGuardHome.yaml"
     args:
       chdir: /opt/AdGuardHome
       creates: /etc/systemd/system/AdGuardHome.service

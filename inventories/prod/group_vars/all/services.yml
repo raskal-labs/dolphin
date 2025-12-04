@@ -1,26 +1,20 @@
 # inventories/prod/group_vars/all/services.yml
 ---
-services:
+# Global lookup table for service definitions.
 
+services:
   proxmox:
     hostname: "gamecube"
     domain: "gamecube.raskal.io"
     ip: "192.168.0.20"
     port: 8006
 
-  # Future Router/NetBird VM goes here
-  router:
-    hostname: "router-vm"
-    domain: "router.raskal.io"
-    ip: "192.168.10.1" # Example Internal LAN IP
-
   adguard:
     hostname: "link-cable"
     domain: "link-cable.raskal.io"
     ip: "192.168.0.30"
     port: 3000
-    vmid: 105
 
-# Optional wildcard/root domain
+# Global variables
 root_domain: "raskal.io"
 acme_email: "labs@raskal.io"

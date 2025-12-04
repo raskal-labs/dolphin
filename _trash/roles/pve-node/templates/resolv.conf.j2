@@ -1,9 +1,0 @@
-# Managed by Ansible (pve-node role)
-
-{% if pve_node_dns_search_domains is defined and pve_node_dns_search_domains | length %}
-search {{ pve_node_dns_search_domains | join(' ') }}
-{% endif %}
-
-{% for ns in pve_node_dns_servers %}
-nameserver {{ ns }}
-{% endfor %}

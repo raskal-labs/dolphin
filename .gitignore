@@ -1,0 +1,5 @@
+#Ignore Ansible private and sensitive files
+.vault_pass
+/keys/
+/_trash/
+

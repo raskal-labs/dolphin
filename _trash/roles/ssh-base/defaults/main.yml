@@ -1,6 +1,0 @@
----
-# Allow root login but key-only
-ssh_base_permit_root_login: "prohibit-password"
-
-# Disable password authentication entirely
-ssh_base_password_auth: false
