@@ -13,11 +13,36 @@
       - net-tools
       - iproute2
       - gnupg
-      - chrony              # Ensure time sync is installed
+      - chrony
       - zfsutils-linux
+      - sudo    # REQUIRED: For 'raskal' to run admin commands
+      - whois   # REQUIRED: Provides 'mkpasswd' for generating hashes
+      - locales # REQUIRED: For locale generation
     state: present
     update_cache: true
   tags: [init, packages]
+
+# --- LOCALE CONFIG ---
+- name: 🌐 Configure System Locale
+  block:
+    - name: Ensure 'en_US.UTF-8' locale is generated
+      ansible.builtin.locale_gen:
+        name: en_US.UTF-8
+        state: present
+
+    - name: Set default locale to 'en_US.UTF-8'
+      ansible.builtin.command: localectl set-locale LANG=en_US.UTF-8
+      changed_when: false
+  tags: [init, locale]
+
+# --- ROOT ACCESS ---
+- name: 🔐 Add 'omen-15' key to root for WinSCP/Emergency access
+  ansible.posix.authorized_key:
+    user: root
+    state: present
+    key: "{{ lookup('file', playbook_dir + '/../keys/omen-15.pub') }}" 
+    path: /root/.ssh/authorized_keys
+  tags: [init, ssh-key]
 
 - name: Configure SSH Automation Key on PVE Host (gamecube)
   ansible.builtin.user:
@@ -28,15 +53,7 @@
     ssh_key_comment: "dolphin-ansible-automation"
   tags: [init, ssh-key]
 
-- name: 🔐 Add personal login key for WinSCP/PuTTY access
-  ansible.posix.authorized_key:
-    user: root
-    state: present
-    # Use playbook_dir to force looking in the project root 'keys/' folder
-    key: "{{ lookup('file', playbook_dir + '/../keys/winscp.pub') }}"
-    path: /root/.ssh/authorized_keys
-  tags: [init, ssh-key]
-
+# --- REPO CONFIG ---
 - name: Disable Proxmox Enterprise Repo
   ansible.builtin.lineinfile:
     path: /etc/apt/sources.list.d/pve-enterprise.list
@@ -59,6 +76,7 @@
     cache_valid_time: 3600
   tags: [init, repos]
 
+# --- ZFS TIMERS ---
 - name: Enable ZFS scrub timer (Weekly)
   ansible.builtin.systemd:
     name: "zfs-scrub-weekly@{{ pve_zfs_snapshot_pool }}.timer"
@@ -72,3 +90,60 @@
     enabled: yes
     state: started
   tags: [init, zfs]
+
+# --- ADMIN USER SETUP (raskal) ---
+- name: 🔐 Configure Admin User 'raskal'
+  block:
+    - name: Create system user 'raskal' with sudo access
+      ansible.builtin.user:
+        name: raskal
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        password: "{{ raskal_password_hash }}" # Uses Vault variable
+        update_password: on_create # Only sets password if user is new
+      tags: [init, user]
+
+    - name: Add 'omen-15' key to 'raskal'
+      ansible.posix.authorized_key:
+        user: raskal
+        state: present
+        key: "{{ lookup('file', playbook_dir + '/../keys/omen-15.pub') }}"
+      tags: [init, user]
+
+    - name: Ensure Proxmox API group 'admins' exists
+      ansible.builtin.command: pveum groupadd admins
+      register: pve_group_add
+      failed_when: pve_group_add.rc != 0 and 'already exists' not in pve_group_add.stderr
+      changed_when: "'already exists' not in pve_group_add.stderr"
+      tags: [init, pve-auth]
+
+    - name: Grant 'PVEAdmin' role to 'admins' group
+      ansible.builtin.command: pveum aclmod / -group admins -role PVEAdmin
+      register: pve_acl_mod
+      failed_when: pve_acl_mod.rc != 0 and 'already defined' not in pve_acl_mod.stderr
+      changed_when: "'already defined' not in pve_acl_mod.stderr"
+      tags: [init, pve-auth]
+
+    - name: Add 'raskal@pam' to 'admins' group
+      ansible.builtin.command: pveum usermod raskal@pam -group admins
+      register: pve_usermod
+      changed_when: true
+      ignore_errors: true
+      tags: [init, pve-auth]
+
+    - name: ⚙️ Configure Datacenter Contact Email
+      ansible.builtin.lineinfile:
+        path: /etc/pve/datacenter.cfg
+        regexp: "^contact:"
+        line: "contact: {{ pve_root_email | default('root@localhost') }}"
+        state: present
+      tags: [init, pve-config]
+
+    - name: Set Datacenter console defaults
+      ansible.builtin.lineinfile:
+        path: /etc/pve/datacenter.cfg
+        regexp: "^console:"
+        line: "console: xtermjs"
+        state: present
+      tags: [init, pve-config]
