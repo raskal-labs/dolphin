@@ -1,4 +1,4 @@
-1# roles/lxc-adguard/defaults/main.yml
+# roles/lxc-adguard/defaults/main.yml
 ---
 # --- Application Pathing ---
 adguard_download_url: "https://static.adguard.com/adguardhome/release/AdGuardHome_linux_amd64.tar.gz"
@@ -6,7 +6,7 @@ adguard_download_url: "https://static.adguard.com/adguardhome/release/AdGuardHom
 # --- AdGuard Config Defaults (Used in AdGuardHome.yml.j2) ---
 adguard_bind_hosts:
   - "{{ services['adguard'].ip }}" # Bind to its own IP
-  
+
 adguard_upstream_dns:
   - https://dns10.quad9.net/dns-query
   - https://dns11.quad9.net/dns-query

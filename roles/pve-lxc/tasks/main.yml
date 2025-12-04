@@ -1,6 +1,21 @@
 # roles/pve-lxc/tasks/main.yml
 ---
 # Main entry point for LXC management. Requires pve_lxc variable (single container definition).
+- name: Update LXC template list
+  delegate_to: gamecube
+  ansible.builtin.command: pveam update
+  changed_when: false
+  tags: [lxc, template]
+
+- name: Download LXC template if missing
+  delegate_to: gamecube
+  vars:
+    template_name: "{{ pve_lxc.template | regex_replace('^.*:vztmpl/', '') }}"
+    storage_name: "{{ pve_lxc.template | regex_replace(':.*$', '') }}"
+  ansible.builtin.command: "pveam download {{ storage_name }} {{ template_name }}"
+  args:
+    creates: "/var/lib/vz/template/cache/{{ template_name }}"
+  tags: [lxc, template]
 
 - name: Assert container definition is provided
   ansible.builtin.assert:
@@ -19,7 +34,7 @@
     path: "{{ item.source }}"
     state: directory
     # Set owner/group to 100000/100000 (root inside the unprivileged CT)
-    owner: 100000 
+    owner: 100000
     group: 100000
     mode: '0755'
   loop: "{{ pve_lxc.mounts | default([]) }}"

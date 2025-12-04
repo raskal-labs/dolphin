@@ -3,38 +3,25 @@
 zfs_pool: "rpool"
 
 # --- GLOBAL CONTROL VARIABLES ---
-# Enable/disable the entire ZFS layout maintenance by this role.
 zfs_layout_enabled: true
-
-# Enable/disable individual top-level pools
 zfs_box1_enabled: true
-zfs_box2_enabled: false
-zfs_box3_enabled: false
+#zfs_box_2_enabled: false
+zfs_memory_card_enabled: true
+zfs_cart_enabled: true
+zfs_disc_enabled: true
 
 # Datasets ZFS is responsible for creating/maintaining.
 zfs_datasets:
-  # --- BOX 1 (Mounted at /01) ---
+  # --- BOX 1: APPLICATION INFRASTRUCTURE ---
   - { name: "rpool/box1", mountpoint: "/01", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
-  - { name: "rpool/box1/system", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
   - { name: "rpool/box1/apps", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
-  
-  # CORRECTED: Point to existing 'link-cable' dataset to preserve history
   - { name: "rpool/box1/apps/link-cable", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
-  
-  - { name: "rpool/box1/vms", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
-  - { name: "rpool/box1/docs", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
-  - { name: "rpool/box1/logs", enable: true, pool_enabled: "{{ zfs_box1_enabled }}" }
+  # --- BOX 2: PERSONAL FILES ---
+  # --- PVE STORAGE VOLUMES ---
+  - { name: "rpool/cart", mountpoint: "/cart", enable: "{{ zfs_cart_enabled }}", pool_enabled: true }
+  - { name: "rpool/disc", mountpoint: "/disc", enable: "{{ zfs_disc_enabled }}", pool_enabled: true }
 
-  # --- BOX 2 (Mounted at /02) ---
-  - { name: "rpool/box2", mountpoint: "/02", enable: false, pool_enabled: "{{ zfs_box2_enabled }}" }
-  # ... (Add other box2 datasets here if needed, set enable: false) ...
-
-  # --- BOX 3 (Mounted at /03) ---
-  - { name: "rpool/box3", mountpoint: "/03", enable: false, pool_enabled: "{{ zfs_box3_enabled }}" }
-  # ... (Add other box3 datasets here if needed) ...
-
-  # --- Memory Card (Enabled, standard path) ---
-  - { name: "rpool/memory-card", mountpoint: "/memory-card", enable: true, pool_enabled: true }
-  - { name: "rpool/memory-card/backups", enable: true, pool_enabled: true }
-  - { name: "rpool/memory-card/slot-a", enable: true, pool_enabled: true }
-  - { name: "rpool/memory-card/slot-b", enable: true, pool_enabled: true }
+  # --- Memory Card: BACKUP & ARCHIVAL ---
+  - { name: "rpool/memory-card", mountpoint: "/memory-card", enable: "{{ zfs_memory_card_enabled }}", pool_enabled: true }
+  - { name: "rpool/memory-card/slot-a", enable: "{{ zfs_memory_card_enabled }}", pool_enabled: true }
+  - { name: "rpool/memory-card/slot-b", enable: "{{ zfs_memory_card_enabled }}", pool_enabled: true }

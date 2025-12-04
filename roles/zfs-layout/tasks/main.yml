@@ -1,23 +1,50 @@
+# roles/zfs-layout/tasks/main.yml
 ---
 # Manage ZFS datasets and mountpoints for the homelab layout.
 
 - name: Ensure ZFS datasets exist and apply properties
-  # Skips entire role if zfs_layout_enabled is false
-  when: zfs_layout_enabled | default(true) 
+  when: zfs_layout_enabled | default(true)
   block:
     - name: Process datasets
       community.general.zfs:
         name: "{{ item.name }}"
         state: present
-        mountpoint: "{{ item.mountpoint | default(omit) }}"
-        compression: "{{ item.compression | default('lz4') }}"
-        atime: "{{ item.atime | default('off') }}"
+        # FIX: Properties passed via extra_zfs_properties
+        extra_zfs_properties: >-
+          {{
+            {
+              'compression': item.compression | default('lz4'),
+              'atime': item.atime | default('off')
+            } | combine(
+              {'mountpoint': item.mountpoint} if item.mountpoint is defined else {}
+            )
+          }}
       loop: "{{ zfs_datasets }}"
       # Checks three conditions:
       # 1. Is the whole pool block enabled? (e.g., zfs_box1_enabled)
       # 2. Is this specific dataset enabled?
       # 3. Use default(true) if 'enable' is missing from the dictionary item.
-      when: 
+      when:
         - item.pool_enabled | default(true)
         - item.enable | default(true)
       tags: [zfs, storage]
+
+- name: Ensure nested backup and volume directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    # SLOT B DUMP TARGET (vzdump)
+    - /memory-card/slot-b/vzdump
+
+    # LXC VOLUME DIRECTORIES
+    - /cart/demo   # Templates/Demo content (vztmpl target)
+    - /cart/blocks # LXC Rootdir volumes (rootdir target)
+
+    # VM IMAGE DIRECTORIES
+    - /disc/demo   # VM templates (ISO/vztmpl target)
+    - /disc/blocks # VM Images (images target)
+  tags: [zfs, storage, backup]

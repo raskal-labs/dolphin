@@ -1,7 +1,0 @@
-# playbooks/pve-networking.yml
----
-- name: Configure Proxmox Network Interfaces
-  hosts: gamecube
-  become: true
-  roles:
-    - pve-network

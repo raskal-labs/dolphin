@@ -1,0 +1,7 @@
+# playbooks/pve-storage.yml
+---
+- name: Register Proxmox Storage Pools (ZFS)
+  hosts: gamecube
+  become: true
+  roles:
+    - pve-storage

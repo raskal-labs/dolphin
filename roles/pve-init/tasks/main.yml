@@ -28,12 +28,12 @@
     ssh_key_comment: "dolphin-ansible-automation"
   tags: [init, ssh-key]
 
-- name:  Add personal login key for WinSCP/PuTTY access
+- name: 🔐 Add personal login key for WinSCP/PuTTY access
   ansible.posix.authorized_key:
     user: root
     state: present
-    # Reads the key from the 'keys' folder on the Proxmox host
-    key: "{{ lookup('file', 'keys/winscp.pub') }}" 
+    # Use playbook_dir to force looking in the project root 'keys/' folder
+    key: "{{ lookup('file', playbook_dir + '/../keys/winscp.pub') }}"
     path: /root/.ssh/authorized_keys
   tags: [init, ssh-key]
 

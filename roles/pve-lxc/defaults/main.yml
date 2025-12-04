@@ -1,61 +1,10 @@
-# roles/pve-lxc/tasks/container.yml
-# This task handles the creation, mounting, and start/stop of a single LXC.
+# roles/pve-lxc/defaults/main.yml
+---
+# Defaults for the pve-lxc role
+# These are overridden by host_vars or vars passed to the role.
 
-- name: Check if container {{ pve_lxc.vmid }} exists
-  delegate_to: gamecube
-  ansible.builtin.command: "pct config {{ pve_lxc.vmid }}"
-  register: pct_config
-  failed_when: false
-  changed_when: false
-  tags: [lxc]
-
-- name: Build PCT create command
-  ansible.builtin.set_fact:
-    lxc_create_cmd: >
-      pct create {{ pve_lxc.vmid }} {{ pve_lxc.template }}
-      --hostname {{ pve_lxc.hostname }}
-      --cores {{ pve_lxc.cores }}
-      --memory {{ pve_lxc.memory }}
-      --swap {{ pve_lxc.swap | default(0) }}
-      --net0 name=eth0,bridge={{ pve_lxc.net_bridge }},ip={{ pve_lxc.ip }},gw={{ pve_lxc.gateway }}
-      --onboot 1
-      --features nesting=1
-      --ssh-public-keys /root/.ssh/id_ed25519_ansible.pub
-      --rootfs {{ pve_lxc.storage }}:{{ pve_lxc.rootfs_size }}
-      --unprivileged 1
-  tags: [lxc]
-
-- name: Create container {{ pve_lxc.vmid }} if missing
-  delegate_to: gamecube
-  ansible.builtin.command: "{{ lxc_create_cmd }}"
-  when: pct_config.rc != 0
-  register: lxc_created
-  tags: [lxc, create]
-
-- name: Apply Bind Mounts (Update Config)
-  delegate_to: gamecube
-  ansible.builtin.lineinfile:
-    path: "/etc/pve/lxc/{{ pve_lxc.vmid }}.conf"
-    regexp: "^mp{{ idx }}:"
-    line: "mp{{ idx }}: {{ item.source }},mp={{ item.target }},backup={{ item.backup | default(0) }}"
-  loop: "{{ pve_lxc.mounts | default([]) }}"
-  loop_control:
-    index_var: idx
-  notify: Restart LXC
-  tags: [lxc, mounts]
-
-# Optional bounce to fix veth initialization (only needed on fresh creation)
-- name: Bounce container once after creation
-  delegate_to: gamecube
-  when: lxc_created.changed | default(false)
-  block:
-    - name: Stop CT
-      ansible.builtin.command: "pct stop {{ pve_lxc.vmid }}"
-      register: pct_stop
-      failed_when: pct_stop.rc != 0 and 'not running' not in pct_stop.stderr
-      tags: [lxc]
-    - name: Start CT again
-      ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
-      register: pct_start
-      failed_when: pct_start.rc != 0 and 'already running' not in pct_start.stderr
-      tags: [lxc]
+pve_lxc:
+  state: started
+  onboot: true
+  features: "nesting=1"
+  swap: 0

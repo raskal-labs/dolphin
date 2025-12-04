@@ -2,23 +2,19 @@
 ---
 # AdGuard LXC (link-cable) Host Variables
 
-# We look up 'adguard' in the services list because that is the logical SERVICE name,
-# even if the HOSTNAME is 'link-cable'.
-{% set svc = services['adguard'] %}
-
 pve_lxc:
-  vmid: "{{ svc.vmid }}"
-  hostname: "{{ svc.hostname }}" # "link-cable"
-  template: "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
+  vmid: "{{ services['adguard'].vmid }}"
+  hostname: "{{ services['adguard'].hostname }}"
+  ip: "{{ services['adguard'].ip }}/24"
+  template: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
   cores: 1
   memory: 512
-  storage: local-zfs
-  rootfs_size: 4G
+  storage: cart
+  rootfs_size: 4
   net_bridge: vmbr0
-  ip: "{{ svc.ip }}/24"
   gateway: 192.168.0.1
-  
-  # PERSISTENCE: Pointing to existing 'link-cable' data on the host ZFS
+
+  # PERSISTENCE: Now includes the Logs mount
   mounts:
     - id: 0
       source: /box1/apps/link-cable/conf
@@ -26,3 +22,6 @@ pve_lxc:
     - id: 1
       source: /box1/apps/link-cable/work
       target: /var/lib/adguardhome/work
+    - id: 2
+      source: /box1/apps/link-cable/logs
+      target: /var/lib/adguardhome/logs
