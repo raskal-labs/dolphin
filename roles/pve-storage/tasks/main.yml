@@ -1,22 +1,27 @@
 # roles/pve-storage/tasks/main.yml
 ---
-- name:  Define Dedicated Filesystem Storage (cart, disc) backed by ZFS
-  ansible.builtin.command: >
-    pvesm add dir {{ item.id }}
-    --path {{ item.path }}
-    --content {{ item.content | join(',') }}
-    {% if item.content_dirs is defined %}
-    --content-dirs {{ item.content_dirs }}
-    {% endif %}
+- name: Define Dedicated Filesystem Storage (cart, disc) backed by ZFS
+  ansible.builtin.command:
+    cmd: >
+      pvesm add dir {{ item.id }}
+      --path {{ item.path }}
+      --content {{ item.content | join(',') }}
+      {% if item.content_dirs is defined %}
+      --content-dirs {{ item.content_dirs }}
+      {% endif %}
   loop:
-    # cart storage now maps LXC content to 'demo' and 'blocks' subdirectories
+    # CART: LXC Templates go to 'demo'. Volumes go to 'blocks'.
     - { id: 'cart', path: '/cart', content: ['rootdir', 'vztmpl', 'snippets'],
         content_dirs: 'rootdir=blocks,vztmpl=demo,snippets=snippets' }
 
-    # disc storage maps VM content to 'demo' and 'blocks' subdirectories
-    - { id: 'disc', path: '/disc', content: ['images', 'iso', 'vztmpl'],
-        content_dirs: 'images=blocks,iso=demo,vztmpl=demo' }
+    # DISC: VM ISOs go to 'demo'. Images go to 'blocks'.
+    - { id: 'disc', path: '/disc', content: ['images', 'iso'],
+        content_dirs: 'images=blocks,iso=demo' }
   register: add_dir_pools
   changed_when: add_dir_pools.rc == 0
-  failed_when: add_dir_pools.rc != 0 and 'already exists' not in add_dir_pools.stderr
+  # Catch "already defined" to ensure idempotence
+  failed_when: >
+    add_dir_pools.rc != 0 and
+    'already defined' not in add_dir_pools.stderr and
+    'already exists' not in add_dir_pools.stderr
   tags: [proxmox, storage]

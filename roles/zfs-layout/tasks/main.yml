@@ -37,14 +37,14 @@
     group: root
     mode: '0755'
   loop:
-    # SLOT B DUMP TARGET (vzdump)
+    # SLOT B DUMP TARGET
     - /memory-card/slot-b/vzdump
 
-    # LXC VOLUME DIRECTORIES
-    - /cart/demo   # Templates/Demo content (vztmpl target)
-    - /cart/blocks # LXC Rootdir volumes (rootdir target)
+    # LXC STORAGE (/cart)
+    - /cart/demo    # LXC Templates
+    - /cart/blocks  # LXC Volumes
 
-    # VM IMAGE DIRECTORIES
-    - /disc/demo   # VM templates (ISO/vztmpl target)
-    - /disc/blocks # VM Images (images target)
+    # VM STORAGE (/disc)
+    - /disc/demo    # VM ISOs
+    - /disc/blocks  # VM Images
   tags: [zfs, storage, backup]

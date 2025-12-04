@@ -1,0 +1,8 @@
+# roles/pve-lxc/handlers/main.yml
+---
+- name: Restart LXC
+  listen: "Restart LXC"
+  ansible.builtin.command: "pct reboot {{ pve_lxc.vmid }}"
+  # We use ignore_errors because sometimes a reboot returns a non-zero code 
+  # if the container was already in a strange state, but usually it works fine.
+  ignore_errors: true

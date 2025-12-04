@@ -12,9 +12,11 @@
   vars:
     template_name: "{{ pve_lxc.template | regex_replace('^.*:vztmpl/', '') }}"
     storage_name: "{{ pve_lxc.template | regex_replace(':.*$', '') }}"
+    # UPDATE: Point to the 'demo' path
+    storage_path: "/cart/demo"
   ansible.builtin.command: "pveam download {{ storage_name }} {{ template_name }}"
   args:
-    creates: "/var/lib/vz/template/cache/{{ template_name }}"
+    creates: "{{ storage_path }}/{{ template_name }}"
   tags: [lxc, template]
 
 - name: Assert container definition is provided
@@ -44,3 +46,12 @@
 - name: Create or Update LXC Container
   ansible.builtin.import_tasks: container.yml
   tags: [lxc, create, config]
+
+- name: Ensure container is started
+  delegate_to: gamecube
+  ansible.builtin.command: "pct start {{ pve_lxc.vmid }}"
+  register: pct_start_check
+  # Fail only if error is NOT "already running"
+  failed_when: pct_start_check.rc != 0 and 'already running' not in pct_start_check.stderr
+  changed_when: pct_start_check.rc == 0
+  tags: [lxc, start]

@@ -23,7 +23,7 @@
   tags: [init, packages]
 
 # --- LOCALE CONFIG ---
-- name: 🌐 Configure System Locale
+- name: Configure System Locale
   block:
     - name: Ensure 'en_US.UTF-8' locale is generated
       ansible.builtin.locale_gen:
@@ -36,7 +36,7 @@
   tags: [init, locale]
 
 # --- ROOT ACCESS ---
-- name: 🔐 Add 'omen-15' key to root for WinSCP/Emergency access
+- name: Add 'omen-15' key to root for WinSCP/Emergency access
   ansible.posix.authorized_key:
     user: root
     state: present
@@ -92,7 +92,7 @@
   tags: [init, zfs]
 
 # --- ADMIN USER SETUP (raskal) ---
-- name: 🔐 Configure Admin User 'raskal'
+- name:  Configure Admin User 'raskal'
   block:
     - name: Create system user 'raskal' with sudo access
       ansible.builtin.user:
@@ -123,6 +123,13 @@
       register: pve_acl_mod
       failed_when: pve_acl_mod.rc != 0 and 'already defined' not in pve_acl_mod.stderr
       changed_when: "'already defined' not in pve_acl_mod.stderr"
+      tags: [init, pve-auth]
+
+    - name: Register 'raskal@pam' in Proxmox User Management
+      ansible.builtin.command: pveum useradd raskal@pam
+      register: pve_user_add
+      failed_when: pve_user_add.rc != 0 and 'already exists' not in pve_user_add.stderr
+      changed_when: "'already exists' not in pve_user_add.stderr"
       tags: [init, pve-auth]
 
     - name: Add 'raskal@pam' to 'admins' group

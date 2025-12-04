@@ -37,7 +37,7 @@
     owner: root
     group: root
     mode: '0644'
-    creates: /var/lib/adguardhome/conf/AdGuardHome.yaml # Respect user changes (Idempotent)
+    force: no # Ensures idempotence (doesn't overwrite if exists)
   notify: Restart AdGuard
   tags: [adguard, config]
 
@@ -45,9 +45,10 @@
   ansible.builtin.command:
     # Point -c to the persistent config file
     cmd: "/opt/AdGuardHome/AdGuardHome -s install -c /var/lib/adguardhome/conf/AdGuardHome.yaml"
-    args:
-      chdir: /opt/AdGuardHome
-      creates: /etc/systemd/system/AdGuardHome.service
+  # FIX: 'chdir' and 'creates' must be at the same level as 'cmd', NOT under 'args'
+  args:
+    chdir: /opt/AdGuardHome
+    creates: /etc/systemd/system/AdGuardHome.service
   tags: [adguard, service]
 
 - name: Ensure AdGuard Service is enabled and running

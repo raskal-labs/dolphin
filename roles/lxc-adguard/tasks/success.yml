@@ -1,0 +1,35 @@
+---
+- name: ✅ Display FINAL AdGuard Setup Card
+  vars:
+    mount_conf: "{{ hostvars['link-cable']['pve_lxc']['mounts'] | selectattr('target', 'search', 'conf') | map(attribute='source') | first }}"
+    mount_work: "{{ hostvars['link-cable']['pve_lxc']['mounts'] | selectattr('target', 'search', 'work') | map(attribute='source') | first }}"
+  
+  ansible.builtin.debug:
+    msg:
+      - "----------------------------------------------------------------------"
+      - "{{ ascii_link_cable_connected.split('\n') }}"
+      - "----------------------------------------------------------------------"
+      - "✅ INSTALLATION COMPLETE: AdGuard Home"
+      - ""
+      - "📡 CONNECTION INFO:"
+      - "  - Host:            {{ inventory_hostname }}"
+      - "  - IP Address:      {{ ansible_host | default('N/A') }}"
+      - "  - Domain Name:     {{ services['adguard'].domain }}"
+      - "  - Web UI (IP):     http://{{ ansible_host }}:{{ adguard_web_port | default(3000) }}"
+      - "  - Web UI (Domain): http://{{ services['adguard'].domain }}:{{ adguard_web_port | default(3000) }}"
+      - "  - DNS Server:      {{ ansible_host }}:{{ adguard_dns_port | default(53) }}"
+      - ""
+      - "🔑 CREDENTIALS:"
+      - "  - User:            {{ adguard_api_user | default('raskal') }}"
+      - "  - Password:        adguard (Default, unless changed in vault)"
+      - ""
+      - "💾 STATEFUL DATA (ZFS PERSISTENCE):"
+      - "  - Config Dir (Host):       {{ mount_conf }}"
+      - "  - Config Dir (Container):  /var/lib/adguardhome/conf"
+      - "  - Working Dir (Host):      {{ mount_work }}/"
+      - "  - Working Dir (Container): /var/lib/adguardhome/work/"
+      - ""
+      - "🛡️  INFRASTRUCTURE STATUS:"
+      - "  - Container ID:    {{ hostvars['link-cable']['pve_lxc']['vmid'] }} (Stateless App)"
+      - "  - Action:          This container can be destroyed and recreated safely."
+      - "======================================================================"

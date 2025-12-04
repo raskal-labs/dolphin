@@ -1,7 +1,5 @@
 # site.yml
 ---
-# site.yml
----
 # 1. Initialize Proxmox Host
 - import_playbook: playbooks/pve-init.yml
 

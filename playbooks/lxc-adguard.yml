@@ -32,8 +32,8 @@
   roles:
     - lxc-adguard
 
-  # --- INFRASTRUCTURE SUMMARY CARD ---
+# --- INFRASTRUCTURE SUMMARY CARD ---
   post_tasks:
     - name: Include Final Summary Card
-      ansible.builtin.include_tasks:
-        file: roles/lxc-adguard/tasks/success.yml
+      ansible.builtin.import_tasks: # <--- CHANGED from include_tasks
+        file: ../roles/lxc-adguard/tasks/success.yml
