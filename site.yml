@@ -14,3 +14,6 @@
 
 # 5. Provision and Configure AdGuard LXC
 - import_playbook: playbooks/lxc-adguard.yml
+
+# 6. Provision and Configure NetBird LXC 
+- import_playbook: playbooks/lxc-netbird.yml

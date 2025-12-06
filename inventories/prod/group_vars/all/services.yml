@@ -16,6 +16,14 @@ services:
     port: 3000
     vmid: 105
 
+  netbird:
+    hostname: "randnet"
+    domain: "randnet.raskal.io"
+    ip: "192.168.0.32"
+    port: 33073
+    vmid: 102
+    lets_encrypt_email: "labs@raskal.io" # Used by Caddy/Let's Encrypt
+
 # Global variables
 root_domain: "raskal.io"
 acme_email: "labs@raskal.io"

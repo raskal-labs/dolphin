@@ -1,0 +1,20 @@
+# inventories/prod/host_vars/randnet.yml
+---
+# NetBird LXC (randnet) Host Variables
+
+pve_lxc:
+  vmid: 102
+  hostname: "{{ services['netbird'].hostname }}"
+  ip: "{{ services['netbird'].ip }}/24"
+  template: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
+  cores: 2
+  memory: 4096  # Increased for Zitadel/Java requirements
+  swap: 1024
+  storage: cart
+  rootfs_size: 20
+  net_bridge: vmbr0
+  gateway: 192.168.0.1
+  features: "nesting=1" # Critical for Docker
+
+# Secure reference to the vaulted password
+netbird_admin_password: "{{ default_netbird_admin_password }}"

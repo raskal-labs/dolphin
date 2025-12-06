@@ -1,0 +1,68 @@
+# roles/lxc-netbird/tasks/main.yml
+---
+- name: Install NetBird dependencies (Docker, Compose, curl, jq)
+  ansible.builtin.apt:
+    name: 
+      - docker.io
+      - docker-compose
+      - curl
+      - jq
+    state: present
+    update_cache: true
+  tags: [netbird_deps, netbird_install]
+
+- name: Ensure /opt/netbird directory exists
+  ansible.builtin.file:
+    path: /opt/netbird
+    state: directory
+    mode: '0755'
+  tags: [netbird_dir]
+
+- name: Run NetBird Quickstart Script (Zitadel, Caddy, NetBird Stack)
+  ansible.builtin.shell: |
+    echo "Running NetBird setup on {{ services['netbird'].domain }}"
+    
+    # Idempotence Guard: Only run the setup script if the configuration doesn't exist.
+    if [ ! -f "/opt/netbird/docker-compose.yml" ]; then
+      cd /opt/netbird
+
+      curl -fsSL https://github.com/netbirdio/netbird/releases/latest/download/getting-started-with-zitadel.sh | \
+        NETBIRD_DOMAIN={{ services['netbird'].domain }} \
+        NETBIRD_EMAIL={{ services['netbird'].lets_encrypt_email }} \
+        NETBIRD_PASSWORD={{ netbird_admin_password }} \
+        bash
+    else
+      echo "NetBird configuration already exists. Skipping setup script."
+    fi
+  args:
+    chdir: /opt/netbird
+    executable: /bin/bash
+  no_log: true 
+  register: netbird_setup_output
+  tags: [netbird_script, netbird_config]
+
+- name: Start NetBird Docker Compose stack
+  community.docker.docker_compose:
+    project_src: /opt/netbird
+    state: present
+  when: netbird_setup_output is succeeded or (netbird_setup_output is defined and 'Skipping setup script' in netbird_setup_output.stdout)
+  tags: [netbird_service, netbird_run]
+
+- name: Display Success Card and Credentials Reminder
+  ansible.builtin.debug:
+    msg: |
+      **********************************************
+      *** NetBird "Randnet" Deployment Complete! ***
+      **********************************************
+      
+      Access URL: https://{{ services['netbird'].domain }}
+      
+      1. CRITICAL STEP: The Zitadel Admin credentials (Username/Password) 
+         were GENERATED and printed in the output of the task tagged 
+         'netbird_script'. Review the output of that task carefully.
+      
+      2. v0.60 SSH Feature: For identity-aware SSH access, enable the 
+         feature in the Dashboard and on peers ('netbird up --allow-server-ssh').
+      
+      **********************************************
+  tags: [netbird_info]

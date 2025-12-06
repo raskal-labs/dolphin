@@ -1,0 +1,32 @@
+# playbooks/lxc-netbird.yml
+---
+# 1. Provisioning Phase
+- name: Provision NetBird LXC Container (randnet)
+  hosts: proxmox_host
+  become: true
+  gather_facts: false
+  tags: [provision]
+
+  tasks:
+    - name: Delegate container creation to pve-lxc role
+      ansible.builtin.include_role:
+        name: pve-lxc
+      vars:
+        pve_lxc: "{{ hostvars['randnet']['pve_lxc'] }}"
+      tags: [lxc_create]
+
+# 2. Configuration Phase
+- name: Configure NetBird Stack on randnet
+  hosts: randnet
+  become: true
+  gather_facts: true
+  tags: [configure]
+
+  pre_tasks:
+    - name: Wait for SSH connection
+      ansible.builtin.wait_for_connection:
+        timeout: 60
+        delay: 5
+
+  roles:
+    - lxc-netbird
